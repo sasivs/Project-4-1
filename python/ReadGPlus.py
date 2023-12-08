@@ -21,18 +21,26 @@ UserNum = 107614
 #################################### Main #####################################
 
 edges_lil = lil_matrix((UserNum, UserNum))
-
+print(edges_lil)
+print(edges_lil.shape)
 # Read edges from the GPlus file --> edges_lil
 f = open(GPlusFile, "r")
 nodeid2index = {}
 node_num = 0
 print("Reading the GPlus file")
 for i, line in enumerate(f):
+    if(i>1000000): break
     if i % 1000000 == 0:
         print(i)
+    # print(line)
+
     lst = line.rstrip("\n").split(" ")
+    # print(lst)
     nodeid1 = int(lst[0])
     nodeid2 = int(lst[1])
+    # print(nodeid1)
+    # print(nodeid2)
+    # break
     if nodeid1 not in nodeid2index:
         nodeid2index[nodeid1] = node_num
         node_num += 1
@@ -43,36 +51,48 @@ for i, line in enumerate(f):
     index2 = nodeid2index[nodeid2]
     edges_lil[index1, index2] = 1
 f.close()
+print(node_num)
+
+# print(edges_lil.shape)
 
 a1, a2 = edges_lil.nonzero()
-print("#and-edges + #or-edges:", len(a1))
+# print(a1.shape, a2.shape)
 
-# Output edge information
-print("Outputting edge information.")
-f = open(AndEdgeFile, "w")
-g = open(OrEdgeFile, "w")
-print("#nodes", file=f)
-print("#nodes", file=g)
-print(UserNum, file=f)
-print(UserNum, file=g)
-print("node,node", file=f)
-print("node,node", file=g)
-writer = csv.writer(f, lineterminator="\n")
-writer2 = csv.writer(g, lineterminator="\n")
-for i in range(len(a1)):
-    # user_ids --> user_id1, user_id2
-    user_id1 = a1[i]
-    user_id2 = a2[i]
-    if edges_lil[user_id2, user_id1] == 1:
-        if user_id1 < user_id2:
-            lst = [user_id1, user_id2]
-            writer.writerow(lst)
-            writer2.writerow(lst)
-    else:
-        if user_id1 < user_id2:
-            lst = [user_id1, user_id2]
-        else:
-            lst = [user_id2, user_id1]
-        writer2.writerow(lst)
-f.close()
-g.close()
+# for i in range(len(a1)):
+#     user_id1 = a1[i]
+#     user_id2 = a2[i]
+#     if edges_lil[user_id2, user_id1] == 1:
+#         print("Edge ("+str(user_id1)+","+str(user_id2)+")")
+#     else:
+        # print(i)
+# print("#and-edges + #or-edges:", len(a1))
+
+# # Output edge information
+# print("Outputting edge information.")
+# f = open(AndEdgeFile, "w")
+# g = open(OrEdgeFile, "w")
+# print("#nodes", file=f)
+# print("#nodes", file=g)
+# print(UserNum, file=f)
+# print(UserNum, file=g)
+# print("node,node", file=f)
+# print("node,node", file=g)
+# writer = csv.writer(f, lineterminator="\n")
+# writer2 = csv.writer(g, lineterminator="\n")
+# for i in range(len(a1)):
+#     # user_ids --> user_id1, user_id2
+#     user_id1 = a1[i]
+#     user_id2 = a2[i]
+#     if edges_lil[user_id2, user_id1] == 1:
+#         if user_id1 < user_id2:
+#             lst = [user_id1, user_id2]
+#             writer.writerow(lst)
+#             writer2.writerow(lst)
+#     else:
+#         if user_id1 < user_id2:
+#             lst = [user_id1, user_id2]
+#         else:
+#             lst = [user_id2, user_id1]
+#         writer2.writerow(lst)
+# f.close()
+# g.close()

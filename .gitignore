@@ -1,0 +1,9 @@
+python/data/Gplus/node*.csv
+python/data/Gplus/res*.csv
+python/data
+cpp/include/gcem_incl
+cpp/include/stats_incl
+cpp/include/*.hpp
+*.exe
+cpp/TriangleCounting
+.vscode/

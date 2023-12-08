@@ -21,7 +21,7 @@ double Mu;
 string Mu_s;
 char *EpsMu_s[2];
 
-double EpsNsDeg;
+double EpsNsDeg; // epsilon used for adding noise to degree
 double EpsAllbutNsDeg;
 double Eps1st, Eps2ndTrSt;
 
@@ -37,6 +37,7 @@ char *Balloc_s[2];
 // Initialization of statslib
 stats::rand_engine_t engine(1776);
 
+//opens file and returns a file pointer to it
 FILE *FileOpen(string filename, const char *mode) {
 	FILE *fp;
 
@@ -123,7 +124,7 @@ void CalcNLocTri(map<int, int> *a_mat, string outfile, double &tri_num_ns, int e
 
 	// Initialization
 	a_mat_ns = new map<int, int>[NodeNum];
-	malloc1D(&deg_ns, NodeNum);
+	malloc1D(&deg_ns, NodeNum); //Allocate memory for storing noisy degrees
 
 	// Flip probability --> q
     q = 1.0 / (exp(Eps) + 1.0);
@@ -133,7 +134,7 @@ void CalcNLocTri(map<int, int> *a_mat, string outfile, double &tri_num_ns, int e
 		for(j=i+1;j<NodeNum;j++){
 			rnd = genrand_real2();
 			// 0 --> 1 (flip)
-			if(rnd < q && a_mat[i].count(j) == 0){
+			if(rnd < q && a_mat[i].count(j) == 0){ //a_mat[i].count(j) gives whether there is an edge between i,j
 				a_mat_ns[i][j] = 1;
 				a_mat_ns[j][i] = 1;
 			}
@@ -146,16 +147,20 @@ void CalcNLocTri(map<int, int> *a_mat, string outfile, double &tri_num_ns, int e
 	}
 
 	// Degree --> deg_ns
+	// Compute noisy degree from noisy adjacency list
 	for(i=0;i<NodeNum;i++){
 		for (aitr = a_mat_ns[i].begin(); aitr != a_mat_ns[i].end(); aitr++) deg_ns[i] += 1;
 	}
 
 	// Total number of edges --> tot_edge_num_ns
+	// Finding total number of noisy edges by adding the noisy degrees and dividing by 2
 	tot_edge_num_ns = 0;
 	for(i=0;i<NodeNum;i++) tot_edge_num_ns += (long long)deg_ns[i];
 	tot_edge_num_ns /= 2;
 
 	// #triangles --> tri_num
+	// for each i for all pairs of vertices (j,k) in its neighborhood, 
+	// check if there is an edge between j and k 
 	tri_num = 0;
 	for(i=0;i<NodeNum;i++){
 		for (aitr = a_mat_ns[i].begin(); aitr != a_mat_ns[i].end(); aitr++) {
@@ -172,24 +177,28 @@ void CalcNLocTri(map<int, int> *a_mat, string outfile, double &tri_num_ns, int e
 	// With empirical estimation
 	if(emp == 1){
 		// #2-stars --> st2_num
+		// count of two stars = d(d-1)/2
 		st2_num = 0;
 		for(i=0;i<NodeNum;i++){
 			st2_num += ((long long)deg_ns[i] * ((long long)deg_ns[i]-1)) / 2;
 		}
 
 		// #2-edges --> ed2_num
+		// Each triangle contributes to three 2 stars counts 
+		// ed2_num represents the original 2-stars excluding those which are part of the triangle
 		ed2_num = st2_num - 3*tri_num;
 		// #1-edge --> ed1_num
+		// ed1_num represents 
 		ed1_num = (long long)tot_edge_num_ns*(NodeNum-2) - 2*ed2_num - 3*tri_num;
 		// #none --> non_num
 		non_num = (long long)NodeNum*(NodeNum-1)*(NodeNum-2)/6 - tri_num - ed2_num - ed1_num;
 
-		alp = exp(Eps);
-		alp_1_3 = (alp-1.0)*(alp-1.0)*(alp-1.0);
-		q_inv_11 = (alp*alp*alp) / alp_1_3;
-		q_inv_21 = - alp*alp / alp_1_3;
-		q_inv_31 = alp / alp_1_3;
-		q_inv_41 = - 1.0 / alp_1_3;
+		alp = exp(Eps); //alpha = e^eps
+		alp_1_3 = (alp-1.0)*(alp-1.0)*(alp-1.0); // alpha_1_3 = (e^eps-1)^3
+		q_inv_11 = (alp*alp*alp) / alp_1_3; // q_inv_11 = (e^eps/e^eps-1)^3
+		q_inv_21 = - alp*alp / alp_1_3; // q_inv_21 = -(e^eps)^2/(e^eps-1)^3
+		q_inv_31 = alp / alp_1_3; // q_inv_31 = (e^eps)/(e^eps-1)^3
+		q_inv_41 = - 1.0 / alp_1_3; // q_inv_41 = -1/(e^eps-1)^3
 
 		tri_num_ns = (double)tri_num * q_inv_11 + (double)ed2_num * q_inv_21 + (double)ed1_num * q_inv_31 + (double)non_num * q_inv_41;
 	}
@@ -200,6 +209,58 @@ void CalcNLocTri(map<int, int> *a_mat, string outfile, double &tri_num_ns, int e
 
 	delete[] a_mat_ns;
 	free1D(deg_ns);
+}
+
+void CalNILocFCliq(map<int, int> *a_mat, string outfile, double &cliq_4_num_ns, double &cliq_4_num_ns_emp, int emp){
+	map<int, int> *a_mat_ns;			// noisy adjacency matrix
+	long long cliq_4_num;
+	double cliq_4_num_emp;
+	double q;
+	double rho;
+	double rnd;
+	int i, j, k, l;
+
+	a_mat_ns = new map<int, int>[NodeNum];
+
+    q = exp(Eps) / (exp(Eps) + 1.0);
+
+	rho = 1 / exp(Eps); 
+
+	for(i=0;i<NodeNum;i++){
+		for(j=i+1;j<NodeNum;j++){
+			rnd = genrand_real2();
+			// 0 --> 1 (flip)
+			if(rnd < q && a_mat[i].count(j) == 0){ //a_mat[i].count(j) gives whether there is an edge between i,j
+				a_mat_ns[i][j] = 1;
+				a_mat_ns[j][i] = 1;
+			}
+			// 1 --> 1 (not flip)
+			else if(rnd >= q && a_mat[i].count(j) == 1){
+				a_mat_ns[i][j] = 1;
+				a_mat_ns[j][i] = 1;
+			}
+		}
+	}
+
+	cliq_4_num = 0; cliq_4_num_ns = 0;
+	for (i=0; i<NodeNum; i++){
+		for (j=i+1; j<NodeNum; j++){
+			for (k=j+1; k<NodeNum; k++){
+				for (l=k+1; l<NodeNum; l++){
+					if(a_mat_ns[i].count(j) > 0 && a_mat_ns[j].count(k) > 0 && a_mat_ns[k].count(l) > 0 && 
+					a_mat_ns[l].count(i) > 0 && a_mat_ns[i].count(k) > 0 && a_mat_ns[j].count(l) > 0){
+						cliq_4_num_ns++;
+					}
+					cliq_4_num += (((a_mat_ns[i].count(j)/q)-rho) * ((a_mat_ns[j].count(k)/q)-rho) * ((a_mat_ns[k].count(l)/q)-rho) *
+									((a_mat_ns[l].count(i)/q)-rho) * ((a_mat_ns[i].count(k)/q)-rho) * ((a_mat_ns[j].count(l)/q)-rho)) *
+									pow((1-rho), -6);
+				}
+			}
+		}
+	}
+	cliq_4_num_ns = (double)cliq_4_num;
+	cliq_4_num_ns_emp = (double)cliq_4_num_emp;
+
 }
 
 // Calculate #triangles in the non-interactive local model (ARR)
@@ -224,6 +285,8 @@ void CalcNLocTriARR(map<int, int> *a_mat, string outfile, double &tri_num_ns, in
 	// Parameters in asymmetric RR --> Mu (1 --> 1), murho (0 --> 1)
 	murho = Mu / exp(Eps);
 	// Sampling rate --> p2
+	// Mu = p1*p2
+	// p1 = RR prob, p2 = sampling prob
 	p1 = exp(Eps) / (exp(Eps) + 1.0);
 	p2 = Mu / p1;
 
@@ -232,6 +295,7 @@ void CalcNLocTriARR(map<int, int> *a_mat, string outfile, double &tri_num_ns, in
 		for(j=i+1;j<NodeNum;j++){
 			rnd = genrand_real2();
 			// 0 --> 1 (flip)
+			//Storing only one's in a_mat_ns
 			if(rnd < murho && a_mat[i].count(j) == 0){
 				a_mat_ns[i][j] = 1;
 				a_mat_ns[j][i] = 1;
@@ -310,6 +374,9 @@ void CalcNLocTriARR(map<int, int> *a_mat, string outfile, double &tri_num_ns, in
 
 // Calculate #2-stars and #3-stars in the non-interactive local model
 void CalcNLocSt(long long st2_num, long long st3_num, int *deg, string outfile, double &st2_num_ns, double &st3_num_ns, double &sen_st2, double &sen_st3){
+	
+	// arguments contains the org 2-star and 3-star counts
+	
 	int max_deg;
 	int i;
 	FILE *fp;
@@ -327,14 +394,18 @@ void CalcNLocSt(long long st2_num, long long st3_num, int *deg, string outfile, 
 	if(NSType == -1){
 	}
 	// Lap (max degree)
+	// Add noise to the org counts using lap noise calibrated by max_degree
 	else if(NSType == 0){
         // Sensitivity using max degree --> sen_st2, sen_st3
         sen_st2 = sen_st3 = 0;
 		// max(deg) --> max_deg
 		max_deg = 0;
+		// Finding max degree
 		for(i=0;i<NodeNum;i++){
 			if(max_deg < deg[i]) max_deg = deg[i];
 		}
+		// By adding /removing one edge, 2-star count changes by atmost max_degree
+		// Sim for 3 -star counts, it changes by max_degree(max_degree-1)/2 
 		sen_st2 = (double)max_deg;
 		sen_st3 = (double)max_deg * ((double)max_deg - 1.0) / 2.0;
 
@@ -347,6 +418,7 @@ void CalcNLocSt(long long st2_num, long long st3_num, int *deg, string outfile, 
 		}
 	}
 	// Lap (degree)
+	// Add Lap noise calibrated by degree of each vertex
 	else if(NSType == 1){
 		// Average sensitivity using each user's degree --> sen_st2, sen_st3
         sen_st2 = sen_st3 = 0;
@@ -368,12 +440,14 @@ void CalcNLocSt(long long st2_num, long long st3_num, int *deg, string outfile, 
 		sen_st3 /= (double)NodeNum;
 	}
 	// Lap (noisy degree)
+	// Add noise using noisy degree
 	else if(NSType == 2){
 		// Noisy degree --> deg_ns
 		for(i=0;i<NodeNum;i++){
 			deg_ns[i] = (double)deg[i] + stats::rlaplace(0.0, 1.0/EpsNsDeg, engine);
 		}
 		// Add positive bias (EClip) --> deg_ns
+		// Performing edge clipping
 		if(EClip != -1){
 			for(i=0;i<NodeNum;i++) deg_ns[i] += EClip;
 		}
@@ -636,7 +710,9 @@ void CalcTKDESt(int *deg, string outfile, double &st2_num_ns, double &st3_num_ns
 	free1D(deg_ns);
 }
 
-// Calculate #triangles and #2-stars in the interactive local model
+// Calculate #triangles and #2-stars in the interactive local model(Basic algorithm)
+// By adding noise with max_degree, org degree of each node, 
+// noisy degree with/without edge clipping and graph projection 
 void CalcILocTri(map<int, int> *a_mat, int *deg, string outfile, double &tri_num_ns, double &sen_tri){
 	map<int, int> *a_mat_ns;			// noisy adjacency matrix
 	map<int, int> *a_mat_del;			// deleted adjacency matrix after projection
@@ -822,10 +898,13 @@ void CalcILocTri(map<int, int> *a_mat, int *deg, string outfile, double &tri_num
 	free1D(deg_ns);
 }
 
+// KL divergence function
 double CalcKL(double p1, double p2){
 	return p1 * log(p1 / p2) + (1.0 - p1) * log((1.0 - p1) / (1.0 - p2));
 }
 
+
+//Calculating clipping threshold for full, one, two alg
 double CalcRedSen(double deg_ns, int alg){
 	double kappa, kappa_min, kappa_max;
 	double mu_pow;
@@ -836,7 +915,7 @@ double CalcRedSen(double deg_ns, int alg){
 		printf("Error: incorrect alg @ CalcRedSen\n");
 		exit(-1);
 	}
-
+	//alg=1(full), alg=2(one), alg=3(two)
 	if(deg_ns > 0.0){
 		if (alg == 1) mu_pow = Mu;
 		else mu_pow = Mu * Mu;
@@ -844,6 +923,7 @@ double CalcRedSen(double deg_ns, int alg){
 		if (alg == 1 || alg == 2) kappa_min = mu_pow * deg_ns;
 		else kappa_min = Mu * Mu * Mu * deg_ns;
 		kappa_max = deg_ns;
+		// Triangle clip probability threshold is given by beta
 		tclip_prob_thr = pow(10, -TClip);
 
 		// Find kappa s.t. the triangle clipping probability is small enough
@@ -1830,12 +1910,13 @@ int main(int argc, char *argv[])
 	map<int, int> *a_mat;			// adjacency matrix
 	map<int, int>::iterator aitr;
 	map<int, int>::iterator aitr2;
+	map<int, int>::iterator aitr3;
 	int *deg;									// degree
 	int *deg_lower;								// degree in the lower-triangular part of a_max
 	int max_deg;
 	double Balloc_sum = 0.0;
 	long long tot_edge_num;
-	long long tri_num, st2_num, st3_num, ed2_num, ed1_num, non_num;
+	long long tri_num, st2_num, st3_num, ed2_num, ed1_num, non_num, cliq_4_num;
 	map<int, int> pa2_mat;			// 2-path matrix
 	long long pa3_num, cy4_num, pa2_pow2;
 	double clst;
@@ -1854,7 +1935,7 @@ int main(int argc, char *argv[])
 	double eclip_sum, tclip_sum;
 	int eclip_num, tclip_num;
 	int itr;
-	int i, j, k, x;
+	int i, j, k, x, l;
 	string outdir;
 	string outfile;
 	char s[1025], *str;
@@ -1882,18 +1963,20 @@ int main(int argc, char *argv[])
 		return -1;
 	}
 
-	EdgeFile = argv[1];
+	EdgeFile = argv[1]; //name of the edge file
 
 	NodeNum = -1;
-	if (argc >= 3) NodeNum = atoi(argv[2]);
+	if (argc >= 3) NodeNum = atoi(argv[2]); //#of nodes
 
-	Eps = 1.0;
-	Eps_s = "1";
-	Mu = 1.0;
-	Mu_s = "1";
+	cout<<"#Nodes: "<<NodeNum<<endl;
+
+	Eps = 1.0; 			//epsilon value
+	Eps_s = "1";		//epsilon string value
+	Mu = 1.0;			//mu value
+	Mu_s = "1";			//mu string value
 
 	if (argc >= 4){
-		if((EpsMu_s[0] = strtok(argv[3], "-")) == NULL){
+		if((EpsMu_s[0] = strtok(argv[3], "-")) == NULL){  	//input is eps-mu. So, eps_mu[0] = eps and eps_mu[1] = mu
 			printf("Error: incorrect [epsilon-mu]\n");
 			exit(-1);
 		}
@@ -1901,18 +1984,23 @@ int main(int argc, char *argv[])
 			printf("Error: incorrect [epsilon-mu]\n");
 			exit(-1);
 		}
-		Eps = atof(EpsMu_s[0]);
+		Eps = atof(EpsMu_s[0]);   	//converting string to float
 		Mu = atof(EpsMu_s[1]);
-		Eps_s = EpsMu_s[0];
+		Eps_s = EpsMu_s[0];			//String values
 		Mu_s = EpsMu_s[1];
 	}
 
+	cout<<"Epsilon: "<<Eps<<endl;
+	cout<<"Mu: "<<Mu<<endl;
+
 	NSType = -1;
-	if (argc >= 5) NSType = atoi(argv[4]);
+	if (argc >= 5) NSType = atoi(argv[4]);		// Noise type (-1: no noise, 0: Lap (max degree), 1: Lap (true degree + clip), 2: Lap (noisy degree + clip))
+
+	cout<<"Noise Type: "<<NSType<<endl;
 
 	// Triangle and edge clipping parameters
-	TClip = -1;
-	EClip = -1;
+	TClip = -1;  		//Triangle clipping
+	EClip = -1;			//Edge clipping constant alpha in algorithm 2
 	Clip_s = "-1";
 	if (argc >= 6){
 		Clip_s = argv[5];
@@ -1936,7 +2024,10 @@ int main(int argc, char *argv[])
 
 	}
 
-	ItrNum = 1;
+	cout<<"Trianlge clip(beta): "<<TClip<<endl;
+	cout<<"Edge clip(alpha): "<<EClip<<endl;
+
+	ItrNum = 1;			//Number of iterations (set #itr-1 to fix the permutation of nodes)
 	fix_perm = 0;
 	if (argc >= 7){
 		tok  = strtok(argv[6], "-");
@@ -1950,14 +2041,21 @@ int main(int argc, char *argv[])
 		}
 	}
 
-	Alg = 0;
+	cout<<"#Itr: "<<ItrNum<<endl;
+
+	// We require 1,2,3,4 algorithms
+	Alg = 0;	//Algorithm (1: interactive local, 2: efficient interactive local I, 3: efficient interactive local II,
+				//4: efficient interactive local III, 5: non-interactive local (RR w/ emp), 6: non-interactive local (RR w/o emp), 
+				//7: [Ye+, T-KDE (mean)], 8: [Ye+, T-KDE (median)], 9: [Ye+, T-KDE (most frequent degree)], 10: non-interactive local (ARR w/ emp))
 	if (argc >= 8) Alg = atoi(argv[7]);
 	if (Alg <= 0 || Alg > 10){
 		printf("Error: incorrect [Alg]\n");
 		exit(-1);
 	}
 
-	for(i=0;i<2;i++){
+	cout<<"Algorithm: "<<Alg<<endl;
+
+	for(i=0;i<2;i++){			//Privacy budget allocation (alg=1-3): Eps1st-Eps2ndTrSt
 		Balloc[i] = 1.0;
 		Balloc_s[i] = str_1;
 	}
@@ -1976,13 +2074,13 @@ int main(int argc, char *argv[])
 
 	// Privacy budget allocation
 	for(i=0;i<2;i++) Balloc_sum += Balloc[i];
-	if(NSType == -1 || NSType == 0 || NSType == 1){
-		EpsNsDeg = 0.0;				// Epsilon for calculating the noisy degree
+	if(NSType == -1 || NSType == 0 || NSType == 1){		//no edge clipping in nstype in (-1,0,1)
+		EpsNsDeg = 0.0;				// Epsilon for calculating the noisy degree (e0 in algorithm 2)
 		EpsAllbutNsDeg = Eps;
 		Eps1st = Eps * Balloc[0] / Balloc_sum;
 		Eps2ndTrSt = Eps * Balloc[1] / Balloc_sum;
 	}
-	else if(NSType == 2){
+	else if(NSType == 2){		//contains edge clipping
 		EpsNsDeg = Eps / 10;		// Epsilon for calculating the noisy degree
 		EpsAllbutNsDeg = Eps - EpsNsDeg;
 		Eps1st = EpsAllbutNsDeg * Balloc[0] / Balloc_sum;
@@ -1993,11 +2091,11 @@ int main(int argc, char *argv[])
 	if(Mu == 1.0){
 		Mu = exp(Eps1st) / (exp(Eps1st) + 1);
 	}
-	// When Alg == 3 (efficient interactive local II), calculate mu from mu^2
+	// When Alg == 3 (efficient interactive local II), calculate mu from mu^2 (maybe ARROneNS) 
 	if (Alg == 3){
 		Mu = pow(Mu, 1.0/2.0);
 	}
-	// When Alg == 4 (efficient interactive local III), calculate mu from mu^3 
+	// When Alg == 4 (efficient interactive local III), calculate mu from mu^3 (maybe ARRTwoNS) 
 	if (Alg == 4){
 		Mu = pow(Mu, 1.0/3.0);
 	}
@@ -2059,9 +2157,9 @@ int main(int argc, char *argv[])
 	// Initialization
 	malloc1D(&deg, NodeNum);
 	malloc1D(&deg_lower, NodeNum);
-	tri_re_ns_avg = tri_l2_ns_avg = 0.0;
-	st2_re_ns_avg = st2_l2_ns_avg = 0.0;
-	st3_re_ns_avg = st3_l2_ns_avg = 0.0;
+	tri_re_ns_avg = tri_l2_ns_avg = 0.0;	//tri=triangle re=relative error, l2=l2 loss
+	st2_re_ns_avg = st2_l2_ns_avg = 0.0;	//st2=2stars
+	st3_re_ns_avg = st3_l2_ns_avg = 0.0;	//st3=3-stars
 	clst_re_ns_avg = clst_l2_ns_avg = 0.0;
 
 	// Output the header
@@ -2086,12 +2184,14 @@ int main(int argc, char *argv[])
 			ReadEdges(a_mat, node_order[itr]);
 
 			// Degree --> deg
+			//Find degree of each node
 			for(i=0;i<NodeNum;i++) deg[i] = 0;
 			for(i=0;i<NodeNum;i++){
 				for (aitr = a_mat[i].begin(); aitr != a_mat[i].end(); aitr++) deg[i] += 1;
 			}
 
 			// Degree --> deg_lower
+			//Find number of vertices with degree lower than current vertex
 			for(i=0;i<NodeNum;i++) deg_lower[i] = 0;
 			for(i=0;i<NodeNum;i++){
 				for (aitr = a_mat[i].begin(); aitr != a_mat[i].end(); aitr++){
@@ -2101,6 +2201,7 @@ int main(int argc, char *argv[])
 
 			// max(deg) --> max_deg
 			max_deg = 0;
+			//Find out the maximum degree
 			for(i=0;i<NodeNum;i++){
 				if(max_deg < deg[i]) max_deg = deg[i];
 			}
@@ -2111,6 +2212,7 @@ int main(int argc, char *argv[])
 			tot_edge_num /= 2;
 
 			// #triangles --> tri_num
+			//counting triangles
 			tri_num = 0;
 			for(i=0;i<NodeNum;i++){
 				for (aitr = a_mat[i].begin(); aitr != a_mat[i].end(); aitr++) {
@@ -2124,12 +2226,33 @@ int main(int argc, char *argv[])
 				}
 			}
 
-			// #2-stars, #3-stars --> st2_num, st3_num
-			st2_num = st3_num = 0;
-			for(i=0;i<NodeNum;i++){
-				st2_num += ((long long)deg[i] * ((long long)deg[i]-1)) / 2;
-				st3_num += ((long long)deg[i] * ((long long)deg[i]-1) * ((long long)deg[i]-2)) / 6;
+			cliq_4_num = 0;
+			for (i=0; i<NodeNum; i++){
+				for (aitr = a_mat[i].begin(); aitr!=a_mat[i].end(); aitr++){
+					j = aitr->first;
+					if (i>=j) continue;
+					for (aitr2 = a_mat[j].begin(); aitr2 != a_mat[j].end(); aitr2++){
+						k = aitr2->first;
+						if (j>=k) continue;
+						for (aitr3 = a_mat[k].begin(); aitr3 != a_mat[k].end(); aitr3++){
+							l = aitr3->first;
+							if (k>=l) continue;
+							if(a_mat[l].count(i) > 0 && a_mat[l].count(j) > 0 && a_mat[i].count(k) > 0){
+								cliq_4_num++;
+							}
+						}
+					}
+				}
 			}
+
+			cout<<cliq_4_num<<endl;
+
+			// // #2-stars, #3-stars --> st2_num, st3_num
+			// st2_num = st3_num = 0;
+			// for(i=0;i<NodeNum;i++){
+			// 	st2_num += ((long long)deg[i] * ((long long)deg[i]-1)) / 2;
+			// 	st3_num += ((long long)deg[i] * ((long long)deg[i]-1) * ((long long)deg[i]-2)) / 6;
+			// }
 
 			/*
 			// #2-path from i to k, #3-paths --> pa2_mat[i][k], pa3_num
@@ -2180,15 +2303,17 @@ int main(int argc, char *argv[])
 			*/
 
 			// clustering coefficient --> clst
-			if(st2_num != 0) clst = 3.0 * (double)tri_num / (double)st2_num;
-			else clst = 1.0;
+			// if(st2_num != 0) clst = 3.0 * (double)tri_num / (double)st2_num;
+			// else clst = 1.0;
 
 			// #2-edges --> ed2_num
-			ed2_num = st2_num - 3*tri_num;
-			// #1-edge --> ed1_num
-			ed1_num = (long long)tot_edge_num*(NodeNum-2) - 2*ed2_num - 3*tri_num;
-			// #none --> non_num
-			non_num = (long long)NodeNum*(NodeNum-1)*(NodeNum-2)/6 - tri_num - ed2_num - ed1_num;
+			//edges that are part of 2-stars but not part of teiangles
+			// ed2_num = st2_num - 3*tri_num;
+			// // #1-edge --> ed1_num
+			// // edges that are not part of 2-stars and triangles
+			// ed1_num = (long long)tot_edge_num*(NodeNum-2) - 2*ed2_num - 3*tri_num;
+			// // #none --> non_num
+			// non_num = (long long)NodeNum*(NodeNum-1)*(NodeNum-2)/6 - tri_num - ed2_num - ed1_num;
 		}
 
 		/************************ Calculate sub-graph counts ************************/
@@ -2255,6 +2380,10 @@ int main(int argc, char *argv[])
         	// Calculate #triangles
 			CalcNLocTriARR(a_mat, outfile, tri_num_ns, 1);
 			sen_tri = 0.0;
+		}
+
+		else if (Alg == 11){
+			
 		}
 
 		/******************** Calculate the cluster coefficient *********************/
