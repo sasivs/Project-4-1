@@ -113,7 +113,7 @@ void CalNILocFCliq(map<int, int> *a_mat, string outfile, double &cliq_4_num_ns, 
 
 	a_mat_ns = new map<int, int>[NodeNum];
 
-    q = exp(Eps) / (exp(Eps) + 1.0);
+    q = exp(Eps) / (exp(Eps) + 1.0) * p2;
 
 	rho = 1 / exp(Eps); 
 
@@ -279,8 +279,8 @@ void CalNIFCliqCountingARR(map<int, int> *a_mat, string outfile, double &cliq_4_
 
 	q2 = 1.0 - p2;
 
-	alp = exp(Eps);
-	alp_1_6 = pow((alp-1.0), 6);
+	alp = exp(Eps) / (exp(Eps) + 1);
+	alp_1_6 = pow(((alp*alp)-1.0), 6);
 
 	cliq_4_num_bs = (double)cliq_4_num / pow(p2, 6);
 	edge_5_bs = (double)edge_5 / pow(p2, 5) - 6 * q2 * cliq_4_num_bs;
@@ -309,7 +309,7 @@ void CalNIFCliqCountingARR(map<int, int> *a_mat, string outfile, double &cliq_4_
 void CalIFCliqCountingShuffler(map<int, int> *a_mat, string outfile, double &cliq_4_num_ns_unb, double &cliq_4_num_ns_clip){
 	int i,j,k,itr,itr1;
 	int zij, zjk, zki, zji, zkj, zik, partial_sum;
-	double ql, q, ql_1_3, q_1;
+	double ql, q, q_1_3, ql_1;
 	double rnd;
 	double star_3;
 	int* randperm;
@@ -330,16 +330,16 @@ void CalIFCliqCountingShuffler(map<int, int> *a_mat, string outfile, double &cli
 
 	q = 1 / (exp(Eps) + 1);
 
-	ql_1_3 = 1 / pow(1-2*ql, 3);
+	q_1_3 = 1 / pow(1-2*ql, 3);
 
-	q_1 = 1 / (1-2*q);
+	ql_1 = 1 / (1-2*ql);
 
 	cout<<"Epsilon_L: "<<Eps_l<<endl;
 	cout<<"q_L: "<<ql<<endl;
 	cout<<"Epsilon: "<<Eps<<endl;
 	cout<<"q: "<<q<<endl;
-	cout<<"q_1: "<<q_1<<endl;
-	cout<<"ql_1_3: "<<ql_1_3<<endl;
+	cout<<"q_1: "<<ql_1<<endl;
+	cout<<"ql_1_3: "<<q_1_3<<endl;
 
 	deg_avg = 0;
 	for(i=0;i<NodeNum;i++){
@@ -389,8 +389,8 @@ void CalIFCliqCountingShuffler(map<int, int> *a_mat, string outfile, double &cli
 					(zji-q) * (zjk-q) * (zki-q) + (zji-q) * (zjk-q) * (zik-q) + 
 					(zji-q) * (zkj-q) * (zki-q) + (zji-q) * (zkj-q) * (zik-q);
 
-		cliq_4_num += partial_sum * star_3 * q_1 * ql_1_3 / 8.0;
-		if(min(min(deg_ns[i], deg_ns[j]), deg_ns[k]) > deg_th) cliq_4_num_clip += partial_sum * star_3 * q_1 * ql_1_3 / 8.0;
+		cliq_4_num += partial_sum * star_3 * ql_1 * q_1_3 / 8.0;
+		if(min(min(deg_ns[i], deg_ns[j]), deg_ns[k]) > deg_th) cliq_4_num_clip += partial_sum * star_3 * ql_1 * q_1_3 / 8.0;
 	} 
 
 	cliq_4_num = NodeNum*(NodeNum-1)*(NodeNum-2)*cliq_4_num / (24*t);
