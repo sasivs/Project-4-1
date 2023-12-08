@@ -125,7 +125,7 @@ void CalcNLocTriARRPerm(map<int, int> *a_mat, string outfile, double &tri_num_ns
 	malloc1D(&randperm, NodeNum);
 
 	// Parameters in asymmetric RR --> Mu (1 --> 1), murho (0 --> 1)
-	murho = Mu / exp(Eps);
+	murho = Mu / exp(Eps_l);
     cout<<"Murhho: "<<murho<<endl;
 	// Sampling rate --> p2
 	// Mu = p1*p2
@@ -464,7 +464,7 @@ int main(int argc, char *argv[])
 	cout<<"Algorithm: "<<Alg<<endl;
 
     //Setting RR
-    p1 = exp(Eps) / (exp(Eps) + 1.0);
+    p1 = exp(Eps_l) / (exp(Eps_l) + 1.0);
     
     cout<<"RR Prob: "<<p1<<endl;
 
