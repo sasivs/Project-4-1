@@ -564,7 +564,7 @@ int main(int argc, char *argv[])
 	}
 	// Randomly generate the order of nodes --> node_order
 	else{
-		i = EdgeFile.find_last_of("\\");
+		i = EdgeFile.find_last_of("/");
 		outdir = EdgeFile.substr(0, i+1);
 		outfile = outdir + "node-order_itr" + to_string(ItrNum) + ".csv";
 		if(checkFileExistence(outfile)){
@@ -602,11 +602,11 @@ int main(int argc, char *argv[])
 	cout<<NodeNum<<endl;
 
 	//Output the header
-	i = EdgeFile.find_last_of("\\");
+	i = EdgeFile.find_last_of("/");
 	outdir = EdgeFile.substr(0, i+1);
 	for(i=0;i<3;i++){
-		if(fix_perm) outfile = outdir + "res_n" + to_string(NodeNum) + "_alg" + to_string(Alg) + "_eps" + Eps_s + "_itr" + to_string(ItrNum) + "-1.csv";
-		else outfile = outdir + "res_n" + to_string(NodeNum) + "_alg" + to_string(Alg) + "_eps" + Eps_s + "_itr" + to_string(ItrNum) + ".csv";
+		if(fix_perm) outfile = outdir + "res_n" + to_string(NodeNum) +  "_alg-" + to_string(Alg) + "_eps-" + Eps_s + "_eps_1-" + Eps_1_s + "_eps_l-" + Eps_l_s + "_t-" + t_s + "_c-" + c_s + "_itr-" + to_string(ItrNum)+ "-1.csv";
+		else outfile = outdir + "res_n-" + to_string(NodeNum) + "_alg-" + to_string(Alg) + "_eps-" + Eps_s + "_eps_1-" + Eps_1_s + "_eps_l-" + Eps_l_s + "_t-" + t_s + "_c-" + c_s + "_itr-" + to_string(ItrNum) + ".csv";
 		fp = FileOpen(outfile, "w");
 		fprintf(fp, "#4-cliq(true),#4-cliq(est),#4-cliq(emp-est),#4-cliq(rel-err),#4-cliq(l2-loss)\n");
 		fclose(fp);
