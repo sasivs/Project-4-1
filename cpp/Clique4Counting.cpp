@@ -279,8 +279,8 @@ void CalNIFCliqCountingARR(map<int, int> *a_mat, string outfile, double &cliq_4_
 
 	q2 = 1.0 - p2;
 
-	alp = exp(Eps) / (exp(Eps) + 1);
-	alp_1_6 = pow(((alp*alp)-1.0), 6);
+	alp = exp(Eps);
+	alp_1_6 = pow((alp-1.0), 6);
 
 	cliq_4_num_bs = (double)cliq_4_num / pow(p2, 6);
 	edge_5_bs = (double)edge_5 / pow(p2, 5) - 6 * q2 * cliq_4_num_bs;
