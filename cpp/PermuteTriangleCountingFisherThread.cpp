@@ -7,6 +7,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include <math.h>
+#include <thread>
 #include "mt19937ar.h"
 #include "MemoryOperation.h"
 #include "include/stats.hpp"
@@ -100,12 +101,40 @@ void ReadEdges(map<int, int> *a_mat, int *node_order){
 	fclose(fp);
 }
 
-void swap(int* randperm, int i, int j){
-	int temp;
-	temp = randperm[i];
-	randperm[i] = randperm[j];
-	randperm[j] = temp;
+void permGenerate(int start, int end, double murho, double Mu, map<int, int> *a_mat, map<int, int>* a_mat_ns){
+	int i, j, rnd_ind, curr_ind, temp;
+	double rnd;
+	int* randperm;
+	malloc1D(&randperm, NodeNum);
+	MakeRndPerm(randperm, NodeNum, NodeNum);
+
+	for(i=start;i<NodeNum&&i<=end;i++){
+		if(i%1000==0){
+			cout<<"Heart Beat: "<<i<<endl;
+		}
+		curr_ind = 0;
+		for(j=i+1;j<NodeNum;j++){
+			rnd_ind = curr_ind + (int)(genrand_int32() % (NodeNum-curr_ind));
+			temp = randperm[i];
+			randperm[i] = randperm[j];
+			randperm[j] = temp;
+			rnd = genrand_real2();
+			if(rnd < murho && a_mat[i].count(randperm[curr_ind]) == 0){
+				a_mat_ns[i][j] = 1;
+				a_mat_ns[j][i] = 1;
+			}
+			// 1 --> 1 (not flip)
+			else if(rnd < Mu && a_mat[i].count(randperm[curr_ind]) == 1){
+				a_mat_ns[i][j] = 1;
+				a_mat_ns[j][i] = 1;
+			}
+			curr_ind++;
+		}
+	}
+	free1D(randperm);
+	cout<<"Complete"<<endl;
 }
+
 
 //Calculate the triangle counts with applying the privacy amplification by shuffling
 //While building noisy adj matrix, you do random permutation for each user and then apply 
@@ -121,46 +150,67 @@ void CalcNLocTriARRPerm(map<int, int> *a_mat, string outfile, double &tri_num_ns
 	double q;
 	double alp, alp_1_3, q_inv_11, q_inv_21, q_inv_31, q_inv_41;
 	double rnd;
-	int rnd_ind, curr_ind;
+	int rnd_ind;
 	int i, j, k;
 	double murho, q2;
-	int* randperm;
+	// map<int, int> randperm;
+
+	int nthreads = (int)ceil(NodeNum/1000), start, end;
+	cout<<"NThreads: "<<nthreads<<endl;
+	thread threads[nthreads];
 
 	// Initialization
 	a_mat_ns = new map<int, int>[NodeNum];
 	malloc1D(&deg_ns, NodeNum);
-	malloc1D(&randperm, NodeNum);
 
-	MakeRndPerm(randperm, NodeNum, NodeNum);
+	// for(i=0; i<NodeNum; i++){
+	// 	randperm[i] = 0;
+	// }
+
+	// malloc1D(&randperm, NodeNum);
 
 	// Parameters in asymmetric RR --> Mu (1 --> 1), murho (0 --> 1)
 	murho = Mu / exp(Eps_l);
     cout<<"Murhho: "<<murho<<endl;
-	
+
     cout<<"Mu: "<<Mu<<endl;
 
 	// Flip 0/1 in a_mat with probability q --> a_mat_ns
-	for(i=0;i<NodeNum;i++){
-		if(i%1000==0){
-			cout<<"Heart Beat: "<<i<<endl;
-		}
-		curr_ind = 0;
-		for(j=i+1;j<NodeNum;j++){
-			rnd_ind = curr_ind + (int)(genrand_int32() % (NodeNum-curr_ind));
-			swap(randperm, curr_ind, rnd_ind);
-			rnd = genrand_real2();
-			if(rnd < murho && a_mat[i].count(randperm[curr_ind]) == 0){
-				a_mat_ns[i][j] = 1;
-				a_mat_ns[j][i] = 1;
-			}
-			// 1 --> 1 (not flip)
-			else if(rnd < Mu && a_mat[i].count(randperm[curr_ind]) == 1){
-				a_mat_ns[i][j] = 1;
-				a_mat_ns[j][i] = 1;
-			}
-			curr_ind++;
-		}
+
+	for (i=0; i<nthreads; i++){
+		start = 0 + i*1000;
+		end = 999 + i*1000;
+		threads[i] = thread(permGenerate, start, end, murho, Mu, a_mat, a_mat_ns);
 	}
+
+	for (i=0; i<nthreads; i++){
+		threads[i].join();
+	}
+
+	// for(i=0;i<NodeNum;i++){
+	// 	if(i%1000==0){
+	// 		cout<<"Heart Beat: "<<i<<endl;
+	// 	}
+	// 	for(j=i+1;j<NodeNum;j++){
+	// 		rnd_ind = (int)(genrand_int32() % (NodeNum));
+	// 		while(randperm[rnd_ind]>i){
+	// 			rnd_ind = (int)(genrand_int32() % (NodeNum));
+	// 		}
+	// 		randperm[rnd_ind]++;
+	// 		rnd = genrand_real2();
+	// 		if(rnd < murho && a_mat[i].count(rnd_ind) == 0){
+	// 			a_mat_ns[i][j] = 1;
+	// 			a_mat_ns[j][i] = 1;
+	// 		}
+	// 		// 1 --> 1 (not flip)
+	// 		else if(rnd < Mu && a_mat[i].count(rnd_ind) == 1){
+	// 			a_mat_ns[i][j] = 1;
+	// 			a_mat_ns[j][i] = 1;
+	// 		}
+	// 	}
+	// }
+
+	cout<<"Threads completed"<<endl;
 
 	// Degree --> deg_ns
 	for(i=0;i<NodeNum;i++){
@@ -227,7 +277,7 @@ void CalcNLocTriARRPerm(map<int, int> *a_mat, string outfile, double &tri_num_ns
 	cout<<"Noisy emp est: "<<tri_num_ns<<endl;
 
 	delete[] a_mat_ns;
-	free(randperm);
+	// randperm.clear();
 	free1D(deg_ns);
 }
 
@@ -473,7 +523,7 @@ int main(int argc, char *argv[])
 	}
 	// Randomly generate the order of nodes --> node_order
 	else{
-		i = EdgeFile.find_last_of("/");
+		i = EdgeFile.find_last_of("\\");
 		outdir = EdgeFile.substr(0, i+1);
 		outfile = outdir + "node-order_itr" + to_string(ItrNum) + ".csv";
 		if(checkFileExistence(outfile)){
@@ -515,7 +565,7 @@ int main(int argc, char *argv[])
 	// for(j=0;j<NodeNum;j++) cout<<node_order[0][j]<<endl;
 
 	// Output the header
-	i = EdgeFile.find_last_of("/");
+	i = EdgeFile.find_last_of("\\");
 	outdir = EdgeFile.substr(0, i+1);
 	for(i=0;i<3;i++){
 		if(fix_perm) outfile = outdir + "res_n" + to_string(NodeNum) + "_alg" + to_string(Alg) + "_eps" + Eps_s + "SampProb" + p2_s + "_itr" + to_string(ItrNum) + "-1.csv";
