@@ -113,16 +113,20 @@ void CalcNLocTriARRPerm(map<int, int> *a_mat, string outfile, double &tri_num_ns
 	double tri_num_bs, ed2_num_bs, ed1_num_bs, non_num_bs;
 	double q;
 	double alp, alp_1_3, q_inv_11, q_inv_21, q_inv_31, q_inv_41;
-	double rnd;
+	double rnd, rnd_ind;
 	int i, j, k;
 	double murho, q2;
-	int* randperm;
+	map<int, int> randperm;
 
 	// Initialization
 	a_mat_ns = new map<int, int>[NodeNum];
 	malloc1D(&deg_ns, NodeNum);
 
-	malloc1D(&randperm, NodeNum);
+	for(i=0; i<NodeNum; i++){
+		randperm[i] = 0;
+	}
+
+	// malloc1D(&randperm, NodeNum);
 
 	// Parameters in asymmetric RR --> Mu (1 --> 1), murho (0 --> 1)
 	murho = Mu / exp(Eps_l);
@@ -142,7 +146,11 @@ void CalcNLocTriARRPerm(map<int, int> *a_mat, string outfile, double &tri_num_ns
 
 	// Flip 0/1 in a_mat with probability q --> a_mat_ns
 	for(i=0;i<NodeNum;i++){
-		MakeRndPerm(randperm, NodeNum, NodeNum-i);
+		if(i%1000==0){
+			cout<<"Heart Beat: "<<i<<endl;
+		}
+		// while(randperm.)
+		// MakeRndPerm(randperm, NodeNum, NodeNum-i);
         // for(int k=0; k<NodeNum-i; k++){
         //     cout<<randperm[k]<<" ";
         //     if(k>0 && k%20 == 0){
@@ -157,20 +165,25 @@ void CalcNLocTriARRPerm(map<int, int> *a_mat, string outfile, double &tri_num_ns
         // deg_noisy = 0;
 		// flips = 0;
 		for(j=i+1;j<NodeNum;j++){
+			rnd_ind = genrand_int32() % (NodeNum);
+			while(randperm[rnd_ind]>i){
+				rnd_ind = genrand_int32() % (NodeNum);
+			}
+			randperm[rnd_ind]++;
 			rnd = genrand_real2();
             // cout<<"Random Number: "<<rnd<<endl;
 			// // 0 --> 1 (flip)
 			// //Storing only one's in a_mat_ns
             // cout<<"i: "<<i<<" "<<"J: "<<j<<" "<<"RndPerm[j]: "<<randperm[j-i-1]<<endl;
             // cout<<"Presence: "<<a_mat[i].count(randperm[j-i-1])<<endl;
-			if(rnd < murho && a_mat[i].count(randperm[j-i-1]) == 0){
+			if(rnd < murho && a_mat[i].count(rnd_ind) == 0){
 				a_mat_ns[i][j] = 1;
 				a_mat_ns[j][i] = 1;
                 // deg_noisy+=1;
 				// flips++;
 			}
 			// 1 --> 1 (not flip)
-			else if(rnd < Mu && a_mat[i].count(randperm[j-i-1]) == 1){
+			else if(rnd < Mu && a_mat[i].count(rnd_ind) == 1){
 				a_mat_ns[i][j] = 1;
 				a_mat_ns[j][i] = 1;
                 // deg_noisy+=1;
@@ -191,7 +204,7 @@ void CalcNLocTriARRPerm(map<int, int> *a_mat, string outfile, double &tri_num_ns
 	for(i=0;i<NodeNum;i++) tot_edge_num_ns += (long long)deg_ns[i];
 	// Here we consider only upper triangle matrix of a_mat to compute a_mat_ns
 	// So I think we should not divide it by 2 for total edges
-	// tot_edge_num_ns /= 2;
+	tot_edge_num_ns /= 2;
     cout<<"Noisy Edges: "<<tot_edge_num_ns<<endl;
 	// #triangles --> tri_num
 	tri_num = 0;
@@ -246,6 +259,7 @@ void CalcNLocTriARRPerm(map<int, int> *a_mat, string outfile, double &tri_num_ns
 	cout<<"Noisy emp est: "<<tri_num_ns<<endl;
 
 	delete[] a_mat_ns;
+	randperm.clear();
 	free1D(deg_ns);
 }
 
@@ -528,6 +542,10 @@ int main(int argc, char *argv[])
 
 	cout<<"NodeNum: "<<NodeNum<<endl;
 
+	// cout<<"Nodeorder: "<<endl;
+
+	// for(j=0;j<NodeNum;j++) cout<<node_order[0][j]<<endl;
+
 	// Output the header
 	i = EdgeFile.find_last_of("\\");
 	outdir = EdgeFile.substr(0, i+1);
@@ -556,17 +574,34 @@ int main(int argc, char *argv[])
                 for (aitr = a_mat[i].begin(); aitr != a_mat[i].end(); aitr++) total_edges += 1;
             }
 
+			// cout<<"Adjacency List: "<<endl;
+
+			// for(i=0;i<NodeNum;i++){
+            //     for (aitr = a_mat[i].begin(); aitr != a_mat[i].end(); aitr++){
+			// 		cout<<"Node: "<<i<<" Key: "<<aitr->first<<" Value: "<<aitr->second<<endl;
+			// 	};
+            // }
+
             cout<<"Total edges: "<<total_edges<<endl;
 
 			tri_num = 0;
 			for(i=0;i<NodeNum;i++){
+				// cout<<i<<" Node"<<endl;
 				for (aitr = a_mat[i].begin(); aitr != a_mat[i].end(); aitr++) {
 					j = aitr->first;
+					// cout<<"Iter:1 "<<aitr->first<<" "<<aitr->second<<endl;
 					if (i >= j) continue;
-					for (aitr2 = a_mat[i].begin(); aitr2 != a_mat[i].end(); aitr2++) {
+					for (aitr2 = a_mat[j].begin(); aitr2 != a_mat[j].end(); aitr2++) {
 						k = aitr2->first;
+						// cout<<"Iter:2 "<<aitr2->first<<" "<<aitr2->second<<endl;
 						if (j >= k) continue;
-						if(a_mat[j].count(k) > 0) tri_num++;
+						// cout<<"Count: "<<a_mat[j].count(k)<<endl;
+						if(a_mat[i].count(k) > 0){
+							tri_num++;
+							// if(tri_num%100000 == 0){
+							// 	cout<<"Heart Beat: "<<tri_num<<endl;
+							// }
+						} 
 					}
 				}
 			}
