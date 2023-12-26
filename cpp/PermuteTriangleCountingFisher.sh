@@ -1,10 +1,15 @@
 #!/bin/bash -x
 g++ ./PermuteTriangleCountingFisher.cpp -o PermuteTriangleCountingFisher.out
 # ./PermuteTriangleCountingFisher.out ../python/data/Gplus/edges.csv 10000 1 3.5 0 1 1 1.5 1-1 1
-# ./PermuteTriangleCounting.out ../python/data/Gplus/edges.csv 20000 1 4.14 0 1 1 1.5 1-1 1
-# ./PermuteTriangleCounting.out ../python/data/Gplus/edges.csv 30000 1 4.52 0 1 1 1.5 1-1 1
-# ./PermuteTriangleCounting.out ../python/data/Gplus/edges.csv 40000 1 4.8 0 1 1 1.5 1-1 1
-./PermuteTriangleCounting.out ../python/data/Gplus/edges.csv 50000 1 5.02 0 1 1 1.5 1-1 1
+# ./PermuteTriangleCountingFisher.out ../python/data/Gplus/edges.csv 20000 1 4.14 0 1 1 1.5 1-1 1
+# ./PermuteTriangleCountingFisher.out ../python/data/Gplus/edges.csv 30000 1 4.52 0 1 1 1.5 1-1 1
+# ./PermuteTriangleCountingFisher.out ../python/data/Gplus/edges.csv 40000 1 4.8 0 1 1 1.5 1-1 1
+# ./PermuteTriangleCountingFisher.out ../python/data/Gplus/edges.csv 50000 1 5.02 0 1 1 1.5 1-1 1
+./PermuteTriangleCountingFisher.out ../python/data/Gplus/edges.csv 60000 1 5.19 0 1 1 1.5 1-1 1
+./PermuteTriangleCountingFisher.out ../python/data/Gplus/edges.csv 70000 1 5.34 0 1 1 1.5 1-1 1
+./PermuteTriangleCountingFisher.out ../python/data/Gplus/edges.csv 80000 1 5.48 0 1 1 1.5 1-1 1
+./PermuteTriangleCountingFisher.out ../python/data/Gplus/edges.csv 90000 1 5.59 0 1 1 1.5 1-1 1
+./PermuteTriangleCountingFisher.out ../python/data/Gplus/edges.csv 100000 1 5.56 0 1 1 1.5 1-1 1
 # .\PermuteTriangleCounting.exe ..\python\data\Gplus\edges.csv 15000 3.87 2 1-1 1
 # .\PermuteTriangleCounting.exe ..\python\data\Gplus\edges.csv 15000 3.87 1 1-1 1
 # .\PermuteTriangleCounting.exe ..\python\data\Gplus\edges.csv 15000 3.87 1.5 1-1 1
