@@ -334,7 +334,8 @@ int main(int argc, char *argv[])
 
 	long long tri_num;
 
-	double tri_num_ns, tri_num_ns_emp, tri_num_ns_unb, tri_num_ns_clip, tri_num_re, tri_num_avg_re;
+	double tri_num_ns, tri_num_ns_emp, tri_num_ns_unb, tri_num_ns_clip, tri_num_re, tri_num_avg_re, tri_num_re_noisy, tri_num_re_emp,
+	tri_num_avg_re_noisy, tri_num_avg_re_emp;
 	
 	int itr;
 	int i, j, k, x, l;
@@ -521,7 +522,7 @@ int main(int argc, char *argv[])
 		if(fix_perm) outfile = outdir + "res_n" + to_string(NodeNum) + "_alg" + to_string(Alg) + "_eps" + Eps_s + "SampProb" + p2_s + "_itr" + to_string(ItrNum) + "-1.csv";
 		else outfile = outdir + "res_n" + to_string(NodeNum) + "_alg" + to_string(Alg) + "_eps" + Eps_s + "SampProb" + p2_s + "_itr" + to_string(ItrNum) + ".csv";
 		fp = FileOpen(outfile, "w");
-		fprintf(fp, "Triangle(true),Triangle(est),Triangle(emp-est),Triangle(rel-err),Triangle(l2-loss)\n");
+		fprintf(fp, "Triangle(true),Triangle(est),Triangle(emp-est),Triangle(rel-err(noisy)),Triangle(rel-error(emp))\n");
 		fclose(fp);
 	}
 
@@ -583,12 +584,13 @@ int main(int argc, char *argv[])
 			cout<<"Main Triangle Noisy: "<<tri_num_ns<<endl;
 			cout<<"Unbiased Triangle Noisy: "<<tri_num_ns_emp<<endl;
 
-			tri_num_re = fabs(tri_num_ns - (double)tri_num) / max((double)tri_num, 0.001 * NodeNum);
+			tri_num_re_noisy = fabs(tri_num_ns - (double)tri_num) / max((double)tri_num, 0.001 * NodeNum);
+			tri_num_re_emp = fabs(tri_num_ns_emp - (double)tri_num) / max((double)tri_num, 0.001 * NodeNum);
 
 			/**************************** Output the results ****************************/
 			fp = FileOpen(outfile, "a");
-			fprintf(fp, "%lld,%e,%e,%e\n", 
-			tri_num, tri_num_ns, tri_num_ns_emp, tri_num_re);
+			fprintf(fp, "%lld,%e,%e,%e, %e\n", 
+			tri_num, tri_num_ns, tri_num_ns_emp, tri_num_re_noisy, tri_num_re_emp);
 			fclose(fp);
 		}
 		else if (Alg == 2){
@@ -596,27 +598,30 @@ int main(int argc, char *argv[])
 			cout<<"Triangle counts unbiased: "<<tri_num_ns_unb<<endl;
 			cout<<"Triangle counts clipping: "<<tri_num_ns_clip<<endl;
 
-			tri_num_re = fabs(tri_num_ns_clip - (double)tri_num) / max((double)tri_num, 0.001 * NodeNum);
+			tri_num_re_emp = fabs(tri_num_ns_clip - (double)tri_num) / max((double)tri_num, 0.001 * NodeNum);
+			tri_num_re_noisy = fabs(tri_num_ns_unb - (double)tri_num) / max((double)tri_num, 0.001 * NodeNum);
 			
 			/**************************** Output the results ****************************/
 			fp = FileOpen(outfile, "a");
-			fprintf(fp, "%lld,%e,%e,%e\n", 
-			tri_num, tri_num_ns_unb, tri_num_ns_clip, tri_num_re);
+			fprintf(fp, "%lld,%e,%e,%e, %e\n", 
+			tri_num, tri_num_ns_unb, tri_num_ns_clip, tri_num_re_noisy, tri_num_re_emp);
 			fclose(fp);
 		}
 
-		tri_num_avg_re += tri_num_re;
+		tri_num_avg_re_noisy += tri_num_re_noisy;
+		tri_num_avg_re_emp += tri_num_re_emp;
 
 		if(NodeNum < all_node_num || itr == ItrNum - 1){
 			delete[] a_mat;
 		}
 	}
 
-	tri_num_avg_re /= (double)ItrNum;
+	tri_num_avg_re_noisy /= (double)ItrNum;
+	tri_num_avg_re_emp /= (double)ItrNum;
 
 	fp = FileOpen(outfile, "a");
-	fprintf(fp, "function,AVG(rel-err)\n");
-	fprintf(fp, "Triangles,%e\n", tri_num_avg_re);
+	fprintf(fp, "function,AVG(rel-err(noisy)),AVG(rel-error(emp))\n");
+	fprintf(fp, "Triangles,%e,%e\n", tri_num_avg_re_noisy, tri_num_avg_re_emp);
 	fclose(fp);
 
 	cout<<"Averaged Relative Error: "<<tri_num_avg_re<<endl;
