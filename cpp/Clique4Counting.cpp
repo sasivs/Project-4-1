@@ -279,15 +279,15 @@ void CalNIFCliqCountingARR(map<int, int> *a_mat, string outfile, double &cliq_4_
 
 	q2 = 1.0 - p2;
 
-	alp = exp(Eps) / (exp(Eps) + 1);
-	alp_1_6 = pow(((alp*alp)-1.0), 6);
+	alp = exp(Eps);
+	alp_1_6 = pow((alp-1.0), 6);
 
 	cliq_4_num_bs = (double)cliq_4_num / pow(p2, 6);
 	edge_5_bs = (double)edge_5 / pow(p2, 5) - 6 * q2 * cliq_4_num_bs;
 	edge_4_bs = (double)edge_4 / pow(p2, 4) - 5 * q2 * edge_5_bs - 15 * q2 * q2 * cliq_4_num_bs;
 	edge_3_bs = (double)edge_3 / pow(p2, 3) - 4 * q2 * edge_4_bs - 10 * q2 * q2 * edge_5_bs - 20 * q2 * q2 * q2 * cliq_4_num_bs;
 	edge_2_bs = (double)edge_2 / pow(p2, 2) - 3 * q2 * edge_3_bs - 6 * q2 * q2 * edge_4_bs - 10 * pow(q2,3) * edge_5_bs - 15 * pow(q2,4) * cliq_4_num_bs;
-
+	edge_1_bs = (double)edge_1 / p2 - 2 * q2 * edge_2_bs - 3 * pow(q2, 2) * edge_3_bs - 4 * pow(q2, 3) * edge_4_bs - 5 * pow(q2,4) * edge_5_bs - 6 * pow(q2,5) * cliq_4_num_bs;
 	edge_0_bs = (double)NodeNum*(NodeNum-1)*(NodeNum-2)*(NodeNum-3)/24 - cliq_4_num_bs - edge_5_bs - edge_4_bs - edge_3_bs - edge_2_bs - edge_1_bs;
 
 	q_inv_11 = pow(alp, 6) / alp_1_6;
@@ -564,7 +564,7 @@ int main(int argc, char *argv[])
 	}
 	// Randomly generate the order of nodes --> node_order
 	else{
-		i = EdgeFile.find_last_of("\\");
+		i = EdgeFile.find_last_of("/");
 		outdir = EdgeFile.substr(0, i+1);
 		outfile = outdir + "node-order_itr" + to_string(ItrNum) + ".csv";
 		if(checkFileExistence(outfile)){
@@ -602,11 +602,11 @@ int main(int argc, char *argv[])
 	cout<<NodeNum<<endl;
 
 	//Output the header
-	i = EdgeFile.find_last_of("\\");
+	i = EdgeFile.find_last_of("/");
 	outdir = EdgeFile.substr(0, i+1);
 	for(i=0;i<3;i++){
-		if(fix_perm) outfile = outdir + "res_n" + to_string(NodeNum) + "_alg" + to_string(Alg) + "_eps" + Eps_s + "_itr" + to_string(ItrNum) + "-1.csv";
-		else outfile = outdir + "res_n" + to_string(NodeNum) + "_alg" + to_string(Alg) + "_eps" + Eps_s + "_itr" + to_string(ItrNum) + ".csv";
+		if(fix_perm) outfile = outdir + "res_n" + to_string(NodeNum) +  "_alg-" + to_string(Alg) + "_eps-" + Eps_s + "_eps_1-" + Eps_1_s + "_eps_l-" + Eps_l_s + "_t-" + t_s + "_c-" + c_s + "_itr-" + to_string(ItrNum)+ "-1.csv";
+		else outfile = outdir + "res_n-" + to_string(NodeNum) + "_alg-" + to_string(Alg) + "_eps-" + Eps_s + "_eps_1-" + Eps_1_s + "_eps_l-" + Eps_l_s + "_t-" + t_s + "_c-" + c_s + "_itr-" + to_string(ItrNum) + ".csv";
 		fp = FileOpen(outfile, "w");
 		fprintf(fp, "#4-cliq(true),#4-cliq(est),#4-cliq(emp-est),#4-cliq(rel-err),#4-cliq(l2-loss)\n");
 		fclose(fp);
