@@ -526,7 +526,7 @@ int main(int argc, char *argv[])
 		fclose(fp);
 	}
 
-	tri_num_avg_re = 0;
+	tri_num_avg_re_noisy = 0; tri_num_avg_re_emp = 0;
 	// For each iteration
 	for(itr=0;itr<ItrNum;itr++){
 		// Read edges for each iteration when NodeNum < all_node_num
