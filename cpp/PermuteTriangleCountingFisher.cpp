@@ -1,4 +1,5 @@
 #include <iostream>
+#include <algorithm>
 #include <string>
 #include <fstream>
 #include <map>
@@ -110,7 +111,7 @@ void swap(int* randperm, int i, int j){
 //Calculate the triangle counts with applying the privacy amplification by shuffling
 //While building noisy adj matrix, you do random permutation for each user and then apply 
 //ARR to that bit to get noisy bit
-void CalcNLocTriARRPerm(map<int, int> *a_mat, string outfile, double &tri_num_ns_emp, double &tri_num_ns){
+void CalcNLocTriARRPerm(map<int, int> *a_mat, int* deg, string outfile, double &tri_num_ns_emp, double &tri_num_ns){
 	map<int, int> *a_mat_ns;			// noisy adjacency matrix
 	map<int, int>::iterator aitr;
 	map<int, int>::iterator aitr2;
@@ -167,6 +168,12 @@ void CalcNLocTriARRPerm(map<int, int> *a_mat, string outfile, double &tri_num_ns
 		for (aitr = a_mat_ns[i].begin(); aitr != a_mat_ns[i].end(); aitr++) deg_ns[i] += 1;
 	}
 
+	for(i=0;i<NodeNum;i++){
+		int deg = 0;
+		for (aitr = a_mat[i].begin(); aitr != a_mat[i].end(); aitr++) deg += 1;
+		cout<<"Node - "<<i<<" Deg: "<<deg<<" Noisy Deg: "<<deg_ns[i]<<endl;
+	}
+
 	// Total number of edges --> tot_edge_num_ns
 	tot_edge_num_ns = 0;
 	for(i=0;i<NodeNum;i++) tot_edge_num_ns += (long long)deg_ns[i];
@@ -205,11 +212,15 @@ void CalcNLocTriARRPerm(map<int, int> *a_mat, string outfile, double &tri_num_ns
 	// Calculate #triangles, #2-edges, #1-edge before sampling --> tri_num_bs, ed2_num_bs, ed1_num_bs
 	q2 = 1.0 - p2;
 	tri_num_bs = (double)tri_num / (p2 * p2 * p2);
+	cout<<"Triangles(Before Sampling): "<<tri_num_bs<<endl;
 	ed2_num_bs = (double)ed2_num / (p2 * p2) - 3.0 * q2 * tri_num_bs;
+	cout<<"2-edges(Before Sampling): "<<ed2_num_bs<<endl;
 	ed1_num_bs = (double)ed1_num / p2 - 2.0 * q2 * ed2_num_bs - 3.0 * q2 * q2 * tri_num_bs;
+	cout<<"1-edges(Before Sampling): "<<ed1_num_bs<<endl;
 
 	// #none --> non_num_bs
 	non_num_bs = (double)NodeNum*(NodeNum-1)*(NodeNum-2)/6 - tri_num_bs - ed2_num_bs - ed1_num_bs;
+	cout<<"no-edges(Before Sampling): "<<non_num_bs<<endl;
 
 	alp = exp(Eps);
 	alp_1_3 = (alp-1.0)*(alp-1.0)*(alp-1.0);
@@ -229,6 +240,178 @@ void CalcNLocTriARRPerm(map<int, int> *a_mat, string outfile, double &tri_num_ns
 	delete[] a_mat_ns;
 	free(randperm);
 	free1D(deg_ns);
+}
+
+void CalcNLocTriARRPermDegClip(map<int, int> *a_mat, int* deg, string outfile, double &tri_num_ns_emp, double &tri_num_ns){
+	map<int, int> *a_mat_ns;			// noisy adjacency matrix
+	map<int, int>::iterator aitr;
+	map<int, int>::iterator aitr2;
+	int *deg_ns;									// noisy degree
+	int *deg_clip;									// noisy degree
+	long long tot_edge_num_ns;
+	double tri_num, st2_num, ed2_num, ed1_num, non_num;
+	double tri_num_bs, ed2_num_bs, ed1_num_bs, non_num_bs;
+	double q;
+	double alp, alp_1_3, q_inv_11, q_inv_21, q_inv_31, q_inv_41;
+	double rnd;
+	int rnd_ind, curr_ind;
+	int i, j, k;
+	double murho, q2;
+	int* randperm;
+
+	// Initialization
+	a_mat_ns = new map<int, int>[NodeNum];
+	malloc1D(&deg_ns, NodeNum);
+	malloc1D(&deg_clip, NodeNum);
+	malloc1D(&randperm, NodeNum);
+
+	MakeRndPerm(randperm, NodeNum, NodeNum);
+
+	// Parameters in asymmetric RR --> Mu (1 --> 1), murho (0 --> 1)
+	murho = Mu / exp(Eps_l);
+    cout<<"Murhho: "<<murho<<endl;
+	
+    cout<<"Mu: "<<Mu<<endl;
+
+	// Flip 0/1 in a_mat with probability q --> a_mat_ns
+	for(i=0;i<NodeNum;i++){
+		if(i%1000==0){
+			cout<<"Heart Beat: "<<i<<endl;
+		}
+		curr_ind = 0;
+		for(j=i+1;j<NodeNum;j++){
+			rnd_ind = curr_ind + (int)(genrand_int32() % (NodeNum-curr_ind));
+			swap(randperm, curr_ind, rnd_ind);
+			rnd = genrand_real2();
+			if(rnd < murho && a_mat[i].count(randperm[curr_ind]) == 0){
+				a_mat_ns[i][j] = 1;
+				a_mat_ns[j][i] = 1;
+				deg_ns[i]+=1;
+				deg_ns[j]+=1;
+			}
+			// 1 --> 1 (not flip)
+			else if(rnd < Mu && a_mat[i].count(randperm[curr_ind]) == 1){
+				a_mat_ns[i][j] = 1;
+				a_mat_ns[j][i] = 1;
+				deg_ns[i]+=1;
+				deg_ns[j]+=1;
+			}
+			curr_ind++;
+		}
+		deg_clip[i] = max((int)floor((double)deg[i] + stats::rlaplace(0.0, 1.0/Eps_1, engine)), 0);
+		// cout<<"Node - "<<i<<" Deg: "<<deg[i]<<" Noisy Deg: "<<deg_ns[i]<<" DegClip: "<<deg_clip[i]<<endl;
+	}
+
+	for (i=0; i<NodeNum; i++){
+		if(i%1000==0){
+			cout<<"Heart Beat: "<<i<<endl;
+		}
+		// cout<<deg_ns[i]<<" "<<deg_clip[i]<<endl;
+		if(deg_ns[i]>deg_clip[i]){
+			MakeRndPerm(randperm, deg_ns[i], (deg_ns[i]-deg_clip[i]));
+			// cout<<"Perm Genr"<<endl;
+			sort(randperm, randperm+(deg_ns[i]-deg_clip[i]));
+			// cout<<"Sorted"<<endl;
+			int iter_ind = 0, next_ind = 0, key;
+			aitr = a_mat_ns[i].begin();
+			while(aitr != a_mat_ns[i].end()){
+				if(iter_ind == randperm[next_ind]){
+					key = aitr->first;
+					aitr++;
+					a_mat_ns[i].erase(key);
+					a_mat_ns[key].erase(i);
+					deg_ns[i]-=1;
+					deg_ns[key]-=1;
+					next_ind++;
+				}
+				else{
+					aitr++;
+				}
+				iter_ind++;
+			}
+			// cout<<"While loop"<<endl;
+		}
+	}
+
+	// Degree --> deg_ns
+	// for(i=0;i<NodeNum;i++){
+	// 	for (aitr = a_mat_ns[i].begin(); aitr != a_mat_ns[i].end(); aitr++) deg_ns[i] += 1;
+	// }
+
+	// for(i=0;i<NodeNum;i++){
+	// 	int deg = 0;
+	// 	for (aitr = a_mat[i].begin(); aitr != a_mat[i].end(); aitr++) deg += 1;
+	// 	// cout<<"Node - "<<i<<" Deg: "<<deg<<" Noisy Deg: "<<deg_ns[i]<<endl;
+	// }
+
+	// Total number of edges --> tot_edge_num_ns
+	tot_edge_num_ns = 0;
+	for(i=0;i<NodeNum;i++) tot_edge_num_ns += (long long)deg_ns[i];
+	// Here we consider only upper triangle matrix of a_mat to compute a_mat_ns
+	// So I think we should not divide it by 2 for total edges
+	tot_edge_num_ns /= 2;
+    cout<<"Noisy Edges: "<<tot_edge_num_ns<<endl;
+	// #triangles --> tri_num
+	tri_num = 0;
+	for(i=0;i<NodeNum;i++){
+		for (aitr = a_mat_ns[i].begin(); aitr != a_mat_ns[i].end(); aitr++) {
+			j = aitr->first;
+			if (i >= j) continue;
+			for (aitr2 = a_mat_ns[i].begin(); aitr2 != a_mat_ns[i].end(); aitr2++) {
+				k = aitr2->first;
+				if (j >= k) continue;
+				if(a_mat_ns[j].count(k) > 0) tri_num++;
+			}
+		}
+	}
+
+    cout<<"Triangle Noisy: "<<tri_num<<endl;
+
+	// With empirical estimation
+	// #2-stars --> st2_num
+	// st2_num = 0;
+	// for(i=0;i<NodeNum;i++){
+	// 	st2_num += ((long long)deg_ns[i] * ((long long)deg_ns[i]-1)) / 2;
+	// }
+
+	// // #2-edges --> ed2_num
+	// ed2_num = st2_num - 3*tri_num;
+	// // #1-edge --> ed1_num
+	// ed1_num = (long long)tot_edge_num_ns*(NodeNum-2) - 2*ed2_num - 3*tri_num;
+
+	// Calculate #triangles, #2-edges, #1-edge before sampling --> tri_num_bs, ed2_num_bs, ed1_num_bs
+	// q2 = 1.0 - p2;
+	tri_num_bs = (double)tri_num / (p2 * p2 * p2);
+	// cout<<"Triangles(Before Sampling): "<<tri_num_bs<<endl;
+	// ed2_num_bs = (double)ed2_num / (p2 * p2) - 3.0 * q2 * tri_num_bs;
+	// cout<<"2-edges(Before Sampling): "<<ed2_num_bs<<endl;
+	// ed1_num_bs = (double)ed1_num / p2 - 2.0 * q2 * ed2_num_bs - 3.0 * q2 * q2 * tri_num_bs;
+	// cout<<"1-edges(Before Sampling): "<<ed1_num_bs<<endl;
+
+	// // #none --> non_num_bs
+	// non_num_bs = (double)NodeNum*(NodeNum-1)*(NodeNum-2)/6 - tri_num_bs - ed2_num_bs - ed1_num_bs;
+	// cout<<"no-edges(Before Sampling): "<<non_num_bs<<endl;
+
+	// alp = exp(Eps);
+	// alp_1_3 = (alp-1.0)*(alp-1.0)*(alp-1.0);
+	// q_inv_11 = (alp*alp*alp) / alp_1_3;
+	// q_inv_21 = - alp*alp / alp_1_3;
+	// q_inv_31 = alp / alp_1_3;
+	// q_inv_41 = - 1.0 / alp_1_3;
+
+	// tri_num_ns_emp = tri_num_bs * q_inv_11 + ed2_num_bs * q_inv_21 + ed1_num_bs * q_inv_31 + non_num_bs * q_inv_41;
+	tri_num_ns_emp = tri_num_bs;
+
+	// Without empirical estimation
+	tri_num_ns = (double)tri_num;
+
+	cout<<"unbiased Noisy emp est: "<<tri_num_ns_emp<<endl;
+	cout<<"Noisy emp est: "<<tri_num_ns<<endl;
+
+	delete[] a_mat_ns;
+	free(randperm);
+	free1D(deg_ns);
+	free1D(deg_clip);
 }
 
 void CalITriangleCountingShuffler(map<int, int> *a_mat, string outfile, double &tri_num_ns_unb, double &tri_num_ns_clip){
@@ -327,6 +510,7 @@ int main(int argc, char *argv[])
 {
 	int all_node_num;
 	int **node_order;
+	int *deg;
 	map<int, int> *a_mat;			// adjacency matrix
 	map<int, int>::iterator aitr;
 	map<int, int>::iterator aitr2;
@@ -511,6 +695,8 @@ int main(int argc, char *argv[])
 
 	cout<<"NodeNum: "<<NodeNum<<endl;
 
+	malloc1D(&deg, NodeNum);
+
 	// cout<<"Nodeorder: "<<endl;
 
 	// for(j=0;j<NodeNum;j++) cout<<node_order[0][j]<<endl;
@@ -540,7 +726,10 @@ int main(int argc, char *argv[])
             long long total_edges = 0;
 
             for(i=0;i<NodeNum;i++){
-                for (aitr = a_mat[i].begin(); aitr != a_mat[i].end(); aitr++) total_edges += 1;
+                for (aitr = a_mat[i].begin(); aitr != a_mat[i].end(); aitr++) {
+					total_edges += 1;
+					deg[i] += 1;
+				}
             }
 
 			// cout<<"Adjacency List: "<<endl;
@@ -550,7 +739,7 @@ int main(int argc, char *argv[])
 			// 		cout<<"Node: "<<i<<" Key: "<<aitr->first<<" Value: "<<aitr->second<<endl;
 			// 	};
             // }
-
+			total_edges /= 2;
             cout<<"Total edges: "<<total_edges<<endl;
 
 			tri_num = 0;
@@ -580,7 +769,7 @@ int main(int argc, char *argv[])
 		/************************ Calculate sub-graph counts ************************/
 
 		if (Alg == 1){
-			CalcNLocTriARRPerm(a_mat, outfile, tri_num_ns_emp, tri_num_ns);
+			CalcNLocTriARRPermDegClip(a_mat, deg, outfile, tri_num_ns_emp, tri_num_ns);
 			cout<<"Main Triangle Noisy: "<<tri_num_ns<<endl;
 			cout<<"Unbiased Triangle Noisy: "<<tri_num_ns_emp<<endl;
 
@@ -624,9 +813,10 @@ int main(int argc, char *argv[])
 	fprintf(fp, "Triangles,%e,%e\n", tri_num_avg_re_noisy, tri_num_avg_re_emp);
 	fclose(fp);
 
-	cout<<"Averaged Relative Error: "<<tri_num_avg_re<<endl;
+	cout<<"Averaged Relative Error: "<<tri_num_avg_re_emp<<endl;
 	// free
 	free2D(node_order, ItrNum);
+	free1D(deg);
 
 	return 0;
 }
