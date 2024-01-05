@@ -311,7 +311,7 @@ int main(int argc, char *argv[])
 		NodeNum = all_node_num;
 		for(j=0;j<NodeNum;j++) node_order[0][j] = j;
 		cout<<"NodeNum: "<<NodeNum<<endl;
-		if (p2_flag = 1.0) p2 = pow(NodeNum, -1/p2);
+		if (p2_flag == 1.0) p2 = pow(NodeNum, -1/p2);
 	}
 	// Randomly generate the order of nodes --> node_order
 	else{
