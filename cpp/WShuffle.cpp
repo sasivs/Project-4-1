@@ -302,7 +302,7 @@ int main(int argc, char *argv[])
 
 	cout<<"Fix Perm: "<<fix_perm<<endl;
 
-	Alg = "WShuffle*";	
+	Alg = "WShuffle";	
 
 	cout<<"Algorithm: "<<Alg<<endl;
 
