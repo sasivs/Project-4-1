@@ -360,8 +360,8 @@ int main(int argc, char *argv[])
 	i = EdgeFile.find_last_of("/");
 	outdir = EdgeFile.substr(0, i+1);
 	for(i=0;i<3;i++){
-		if(fix_perm) outfile = outdir + "res_n_" + to_string(NodeNum) + "_alg_" + Alg + "_eps_" + Eps_s + "_p2_" + p2_s + "_itr_" + to_string(ItrNum) + "-1.csv";
-		else outfile = outdir + "res_n_" + to_string(NodeNum) + "_alg_" + Alg + "_eps_" + Eps_s + "_p2_" + p2_s + "_itr_" + to_string(ItrNum) + ".csv";
+		if(fix_perm) outfile = outdir + "res_n_" + to_string(NodeNum) + "_alg_" + Alg + "_eps_" + Eps_s + "_p2_" + p2_s + "_p2flag_" + p2_flag_s + "_itr_" + to_string(ItrNum) + "-1.csv";
+		else outfile = outdir + "res_n_" + to_string(NodeNum) + "_alg_" + Alg + "_eps_" + Eps_s + "_p2_" + p2_s + "_p2flag_" + p2_flag_s + "_itr_" + to_string(ItrNum) + ".csv";
 		fp = FileOpen(outfile, "w");
 		fprintf(fp,"Triangle(true),Triangle(est),Triangle(emp-est),Triangle(rel-err(noisy)),Triangle(rel-error(emp)))\n");
 		fclose(fp);
@@ -406,8 +406,7 @@ int main(int argc, char *argv[])
 		}
 		/************************ Calculate sub-graph counts ************************/
 		// Calculate #triangles
-		if(NodeNum <= 10000) CalcNLocTriARR(a_mat, outfile, tri_num_ns, tri_num_emp);
-		else tri_num_ns = 0.0;
+		CalcNLocTriARR(a_mat, outfile, tri_num_ns, tri_num_emp);
 
 		/**************************** Evaluate the loss *****************************/
 		// relative error --> tri_re_ns
