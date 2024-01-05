@@ -422,8 +422,8 @@ int main(int argc, char *argv[])
         cout<<"Triangle counts unbiased: "<<tri_num_ns<<endl;
         cout<<"Triangle counts clipping: "<<tri_num_clip<<endl;
 
-        tri_num_clip_re = fabs(tri_num_clip_re - (double)tri_num) / max((double)tri_num, 0.001 * NodeNum);
-        tri_num_ns_re = fabs(tri_num_ns_re - (double)tri_num) / max((double)tri_num, 0.001 * NodeNum);
+        tri_num_clip_re = fabs(tri_num_clip - (double)tri_num) / max((double)tri_num, 0.001 * NodeNum);
+        tri_num_ns_re = fabs(tri_num_ns - (double)tri_num) / max((double)tri_num, 0.001 * NodeNum);
         
         /**************************** Output the results ****************************/
         fp = FileOpen(outfile, "a");
