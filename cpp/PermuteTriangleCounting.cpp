@@ -16,7 +16,7 @@ using namespace std;
 string EdgeFile;
 int NodeNum;
 double Eps, p2, p1, Eps_l, Eps_1;
-string Eps_s, p2_s, Eps_l_s, Eps_1_s, c_s, t_s;
+string Eps_s, p2_s, Eps_l_s, Eps_1_s, c_s, t_s, Alg_s;
 
 int ItrNum;
 int Alg;
@@ -469,13 +469,21 @@ int main(int argc, char *argv[])
 	Alg = 0;	//Algorithm (1: interactive local, 2: efficient interactive local I, 3: efficient interactive local II,
 				//4: efficient interactive local III, 5: non-interactive local (RR w/ emp), 6: non-interactive local (RR w/o emp), 
 				//7: [Ye+, T-KDE (mean)], 8: [Ye+, T-KDE (median)], 9: [Ye+, T-KDE (most frequent degree)], 10: non-interactive local (ARR w/ emp))
-	if (argc >= 11) Alg = atoi(argv[10]);
+	if (argc >= 11){
+		Alg = atoi(argv[10]);
+		if (Alg==1){
+			Alg_s = "TriangleNodeShuffler";
+		}
+		else if (Alg==2){
+			Alg_s = "TriangleShuffler";
+		}
+	} 
 	// if (Alg <= 0 || Alg > 10){
 	// 	printf("Error: incorrect [Alg]\n");
 	// 	exit(-1);
 	// }
 
-	cout<<"Algorithm: "<<Alg<<endl;
+	cout<<"Algorithm: "<<Alg_s<<endl;
 
     //Setting RR
     p1 = exp(Eps_l) / (exp(Eps_l) + 1.0);
@@ -550,8 +558,8 @@ int main(int argc, char *argv[])
 	i = EdgeFile.find_last_of("\\");
 	outdir = EdgeFile.substr(0, i+1);
 	for(i=0;i<3;i++){
-		if(fix_perm) outfile = outdir + "res_n" + to_string(NodeNum) + "_alg" + to_string(Alg) + "_eps" + Eps_s + "SampProb" + p2_s + "_itr" + to_string(ItrNum) + "-1.csv";
-		else outfile = outdir + "res_n" + to_string(NodeNum) + "_alg" + to_string(Alg) + "_eps" + Eps_s + "SampProb" + p2_s + "_itr" + to_string(ItrNum) + ".csv";
+		if(fix_perm) outfile = outdir + "res_n" + to_string(NodeNum) + "_alg-" + Alg_s + "_eps-2-" + Eps_s + "_eps_l-" + Eps_l_s + "_eps_1-" + Eps_1_s + "_c-" + c_s + "_t-" + t_s + "_SampProb-" + p2_s + "_itr-" + to_string(ItrNum) + "-1.csv";
+		else outfile = outdir + "res_n" + to_string(NodeNum) + "_alg-" + Alg_s + "_eps-2-" + Eps_s + "_eps_l-" + Eps_l_s + "_eps_1-" + Eps_1_s + "_c-" + c_s + "_t-" + t_s + "_SampProb-" + p2_s + "_itr-" + to_string(ItrNum) + ".csv";
 		fp = FileOpen(outfile, "w");
 		fprintf(fp, "Triangle(true),Triangle(est),Triangle(emp-est),Triangle(rel-err),Triangle(l2-loss)\n");
 		fclose(fp);
