@@ -347,7 +347,7 @@ int main(int argc, char *argv[])
 
 	cout<<"#Itr: "<<ItrNum<<endl;
 
-	Alg = "LocalARR";
+	Alg = "LocalARRClique";
 
 	cout<<"Algorithm: "<<Alg<<endl;
 
