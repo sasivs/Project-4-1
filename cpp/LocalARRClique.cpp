@@ -140,7 +140,7 @@ void CalNIFCliqCountingARR(map<int, int> *a_mat, string outfile, double &cliq_4_
 		for (aitr = a_mat_ns[i].begin(); aitr != a_mat_ns[i].end(); aitr++) deg_ns[i] += 1;
 		total_edges_ns += deg_ns[i];
 	}
-
+	total_edges_ns /= 2.0;
 	st2_num = 0;
 	for(i=0;i<NodeNum;i++){
 		st2_num += ((long long)deg_ns[i] * ((long long)deg_ns[i]-1)) / 2;
@@ -159,6 +159,7 @@ void CalNIFCliqCountingARR(map<int, int> *a_mat, string outfile, double &cliq_4_
 		}
 	}
 
+	cout<<"Triangles: "<<tri_num<<endl;
 	// cliq_4_num = 0;
 	// for (i=0; i<NodeNum; i++){
 	// 	for (aitr = a_mat_ns[i].begin(); aitr != a_mat_ns[i].end(); aitr++){
@@ -183,7 +184,7 @@ void CalNIFCliqCountingARR(map<int, int> *a_mat, string outfile, double &cliq_4_
 		for (aitr = a_mat_ns[i].begin(); aitr != a_mat_ns[i].end(); aitr++){
 			j = aitr->first;
 			if (i >= j) continue;
-			for (aitr1 = a_mat_ns[j].begin(); aitr2 != a_mat_ns[j].end(); aitr2++){
+			for (aitr1 = a_mat_ns[j].begin(); aitr1 != a_mat_ns[j].end(); aitr1++){
 				k = aitr1->first;
 				if (j >= k) continue;
 				// But actual triangles get counted twice
@@ -446,18 +447,25 @@ int main(int argc, char *argv[])
 			// #triangles --> tri_num
 			//counting triangles
 			cliq_num = 0;
-			for(i=0;i<NodeNum;i++){
-				for (aitr = a_mat[i].begin(); aitr != a_mat[i].end(); aitr++) {
+			for (i=0; i<NodeNum; i++){
+				for (aitr = a_mat[i].begin(); aitr!=a_mat[i].end(); aitr++){
 					j = aitr->first;
-					if (i >= j) continue;
-					for (aitr2 = a_mat[i].begin(); aitr2 != a_mat[i].end(); aitr2++) {
+					if (i>=j) continue;
+					for (aitr2 = a_mat[j].begin(); aitr2 != a_mat[j].end(); aitr2++){
 						k = aitr2->first;
-						if (j >= k) continue;
-						if(a_mat[j].count(k) > 0) cliq_num++;
+						if (j>=k) continue;
+						for (aitr3 = a_mat[k].begin(); aitr3 != a_mat[k].end(); aitr3++){
+							l = aitr3->first;
+							if (k>=l) continue;
+							if(a_mat[l].count(i) > 0 && a_mat[l].count(j) > 0 && a_mat[i].count(k) > 0){
+								cliq_num++;
+							}
+						}
 					}
 				}
 			}
 		}
+		cout<<"CLiq: "<<cliq_num<<endl;
 		/************************ Calculate sub-graph counts ************************/
 		// Calculate #triangles
 		CalNIFCliqCountingARR(a_mat, outfile, cliq_num_ns, cliq_num_emp);
