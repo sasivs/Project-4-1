@@ -129,7 +129,7 @@ double &clip_cliq_4_num1, double &clip_cliq_4_num2, double &clip_cliq_4_num3){
 
 	ql = 1 / (exp(Eps_l) + 1);
 
-	q = 1 / (exp(Eps) + 1);
+	q = 1 / (exp(Eps_2) + 1);
 
 	q_1_3 = 1 / pow(1-2*q, 3);
 	
@@ -309,7 +309,7 @@ int main(int argc, char *argv[])
 		Eps_2 = atof(argv[5]);   	//converting string to float
 		Eps_2_s = argv[5];
 	}
-	cout<<"WSLE Epsilon: "<<Eps_1<<endl;
+	cout<<"WSLE Epsilon: "<<Eps_2<<endl;
 
     if (argc >= 7){
 		Eps_l = atof(argv[6]);   	//converting string to float
@@ -334,7 +334,7 @@ int main(int argc, char *argv[])
 		t_s = argv[9];
 	}
 	if(t==-1 && NodeNum != -1){
-		t = (int)ceil(NodeNum/3.0);
+		t = (int)floor(NodeNum/3.0);
 	}
 	cout<<"t: "<<t<<endl;
 
@@ -374,14 +374,14 @@ int main(int argc, char *argv[])
 	if (NodeNum == -1){
 		NodeNum = all_node_num;
         if(t==-1){
-            t = (int)ceil(NodeNum/3.0);
+            t = (int)floor(NodeNum/3.0);
             cout<<"t: "<<t<<endl;
         } 
 		for(j=0;j<NodeNum;j++) node_order[0][j] = j;
 	}
 	// Randomly generate the order of nodes --> node_order
 	else{
-		i = EdgeFile.find_last_of("/");
+		i = EdgeFile.find_last_of("\\");
 		outdir = EdgeFile.substr(0, i+1);
 		outfile = outdir + "node-order_itr" + to_string(ItrNum) + ".csv";
 		if(checkFileExistence(outfile)){
@@ -421,7 +421,7 @@ int main(int argc, char *argv[])
 	malloc1D(&deg, NodeNum);
 
 	// Output the header
-	i = EdgeFile.find_last_of("/");
+	i = EdgeFile.find_last_of("\\");
 	outdir = EdgeFile.substr(0, i+1);
 	for(i=0;i<3;i++){
 		if(fix_perm) outfile = outdir + "res_n_" + to_string(NodeNum) + "_alg_" + Alg + "_eps_" + Eps_s + "_eps_1_" + Eps_1_s + "_eps_2_" + Eps_2_s + "_eps_l_" + Eps_l_s + "_delta_" + delta_s + "_c_" + c_s + "_t_" + t_s + "_itr" + to_string(ItrNum) + "-1.csv";
