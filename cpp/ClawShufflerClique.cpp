@@ -381,7 +381,7 @@ int main(int argc, char *argv[])
 	}
 	// Randomly generate the order of nodes --> node_order
 	else{
-		i = EdgeFile.find_last_of("\\");
+		i = EdgeFile.find_last_of("/");
 		outdir = EdgeFile.substr(0, i+1);
 		outfile = outdir + "node-order_itr" + to_string(ItrNum) + ".csv";
 		if(checkFileExistence(outfile)){
@@ -421,7 +421,7 @@ int main(int argc, char *argv[])
 	malloc1D(&deg, NodeNum);
 
 	// Output the header
-	i = EdgeFile.find_last_of("\\");
+	i = EdgeFile.find_last_of("/");
 	outdir = EdgeFile.substr(0, i+1);
 	for(i=0;i<3;i++){
 		if(fix_perm) outfile = outdir + "res_n_" + to_string(NodeNum) + "_alg_" + Alg + "_eps_" + Eps_s + "_eps_1_" + Eps_1_s + "_eps_2_" + Eps_2_s + "_eps_l_" + Eps_l_s + "_delta_" + delta_s + "_c_" + c_s + "_t_" + t_s + "_itr" + to_string(ItrNum) + "-1.csv";
