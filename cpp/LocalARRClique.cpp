@@ -109,11 +109,15 @@ void CalNIFCliqCountingARR(map<int, int> *a_mat, string outfile, double &cliq_4_
 	double rho, murho;
 	double rnd;
 	int i, j, k, l;
-	double q, q2;
+	double q, q2, p1;
 	double alp, alp_1_6, q_inv_11, q_inv_21, q_inv_31, q_inv_41, q_inv_51, q_inv_61, q_inv_71;
 
 	a_mat_ns = new map<int, int>[NodeNum];
 	malloc1D(&deg_ns, NodeNum);
+
+	p1 = exp(Eps) / (exp(Eps)+1.0);
+
+	Mu = p1*p2;
 
 	murho = Mu / exp(Eps);
 
