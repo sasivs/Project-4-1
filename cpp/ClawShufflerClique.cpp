@@ -334,7 +334,7 @@ int main(int argc, char *argv[])
 		t_s = argv[9];
 	}
 	if(t==-1 && NodeNum != -1){
-		t = (int)ceil(NodeNum/2.0);
+		t = (int)ceil(NodeNum/3.0);
 	}
 	cout<<"t: "<<t<<endl;
 
@@ -374,7 +374,7 @@ int main(int argc, char *argv[])
 	if (NodeNum == -1){
 		NodeNum = all_node_num;
         if(t==-1){
-            t = (int)ceil(NodeNum/2.0);
+            t = (int)ceil(NodeNum/3.0);
             cout<<"t: "<<t<<endl;
         } 
 		for(j=0;j<NodeNum;j++) node_order[0][j] = j;
