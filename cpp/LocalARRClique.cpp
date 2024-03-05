@@ -130,7 +130,7 @@ void CalNIFCliqCountingARR(map<int, int> *a_mat, string outfile, double &cliq_4_
 				a_mat_ns[j][i] = 1;
 			}
 			// 1 --> 1 (not flip)
-			else if(rnd >= Mu && a_mat[i].count(j) == 1){
+			else if(rnd < Mu && a_mat[i].count(j) == 1){
 				a_mat_ns[i][j] = 1;
 				a_mat_ns[j][i] = 1;
 			}
