@@ -188,14 +188,25 @@ double &clip_cliq_4_num1, double &clip_cliq_4_num2, double &clip_cliq_4_num3){
 					(zji-q) * (zkj-q) * (zki-q) + (zji-q) * (zkj-q) * (zik-q);
 
 		rnd = genrand_real2();
-		if ((rnd < q && a_mat[i].count(j) == 0) || (rnd >= q && a_mat[i].count(k) == 1)) wi = 1;
-		else wi = 0;
+		if (a_mat[i].count(j) > 0 && a_mat[i].count(k) > 0){
+			if (rnd >= q) wi=1;
+		} 
+		else if (rnd < q) wi=1;
+		else wi=0;
+
 		rnd = genrand_real2();
-		if ((rnd < q && a_mat[j].count(i) == 0) || (rnd >= q && a_mat[j].count(k) == 1)) wj = 1;
-		else wj = 0;
+		if (a_mat[j].count(i) > 0 && a_mat[j].count(k) > 0){
+			if (rnd >= q) wj=1;
+		} 
+		else if (rnd < q) wj=1;
+		else wj=0;
+
 		rnd = genrand_real2();
-		if ((rnd < q && a_mat[k].count(j) == 0) || (rnd >= q && a_mat[k].count(i) == 1)) wk = 1;
-		else wk = 0;
+		if (a_mat[k].count(i) > 0 && a_mat[k].count(j) > 0){
+			if (rnd >= q) wk=1;
+		} 
+		else if (rnd < q) wk=1;
+		else wk=0;
 		
 		partial_sum_emp2 = (wi-q) * (zjk-q) + (wi-q) * (zkj-q) +
 					(wj-q) * (zik-q) + (wj-q) * (zki-q) +
