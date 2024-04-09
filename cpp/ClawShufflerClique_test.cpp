@@ -108,6 +108,8 @@ void swap(int* randperm, int i, int j){
 
 void CalIFCliqCountingShuffler(map<int, int> *a_mat, string outfile, double &cliq_4_num1, double &cliq_4_num2, double &cliq_4_num3, \
 double &clip_cliq_4_num1, double &clip_cliq_4_num2, double &clip_cliq_4_num3){
+	map<int, int> *a_mat_ns;			// noisy adjacency matrix
+	map<pair<int,int>, int> *wedge_ns;  // noisy wedge matrix
 	int i,j,k,itr,itr1;
 	int zij, zjk, zki, zji, zkj, zik, partial_sum_emp1, partial_sum_emp2, partial_sum_emp3;
     int  wi, wj, wk;
@@ -121,11 +123,15 @@ double &clip_cliq_4_num1, double &clip_cliq_4_num2, double &clip_cliq_4_num3){
 
 	map<int, int>:: iterator aitr;
 
+	a_mat_ns = new map<int, int>[NodeNum];
+
+	wedge_ns = new map<pair<int,int>, int>[NodeNum];
+
 	malloc1D(&randperm, NodeNum);
 
 	malloc1D(&deg_ns, NodeNum);
 	
-	MakeRndPerm(randperm, NodeNum, 3*t);
+	MakeRndPerm(randperm, NodeNum, NodeNum);
 
 	ql = 1 / (exp(Eps_l) + 1);
 
@@ -136,6 +142,8 @@ double &clip_cliq_4_num1, double &clip_cliq_4_num2, double &clip_cliq_4_num3){
 	q_1_2 = 1 / pow(1-2*q, 2);
 
 	ql_1 = 1 / (1-2*ql);
+
+	cout<<ql<<" "<<q<<" "<<q_1_3<<" "<<q_1_2<<" "<<ql_1<<endl;
 
 	deg_avg = 0;
 	for(i=0;i<NodeNum;i++){
@@ -148,7 +156,7 @@ double &clip_cliq_4_num1, double &clip_cliq_4_num2, double &clip_cliq_4_num3){
 	deg_th = c * deg_avg;
 
 	cliq_4_num_emp1 = 0; cliq_4_num_clip1 = 0; cliq_4_num_emp2 = 0; cliq_4_num_clip2 = 0; cliq_4_num_emp3 = 0; cliq_4_num_clip3 = 0;
-	for(itr=0; itr<(3*t-2); itr+=1){
+	for(itr=0; itr<t; itr+=1){
 		i = randperm[itr];
 		j = randperm[itr+1];
 		k = randperm[itr+2];
@@ -162,51 +170,99 @@ double &clip_cliq_4_num1, double &clip_cliq_4_num2, double &clip_cliq_4_num3){
 			}
 			else if (rnd < ql) star_3++; 
 		}
-		rnd = genrand_real2();
-		if ((rnd < q && a_mat[i].count(j) == 0) || (rnd >= q && a_mat[i].count(j) == 1)) zij = 1;
-		else zij = 0;
-		rnd = genrand_real2();
-		if ((rnd < q && a_mat[j].count(k) == 0) || (rnd >= q && a_mat[j].count(k) == 1)) zjk = 1;
-		else zjk = 0;
-		rnd = genrand_real2();
-		if ((rnd < q && a_mat[k].count(i) == 0) || (rnd >= q && a_mat[k].count(i) == 1)) zki = 1;
-		else zki = 0;
 
-		rnd = genrand_real2();
-		if ((rnd < q && a_mat[j].count(i) == 0) || (rnd >= q && a_mat[j].count(i) == 1)) zji = 1;
-		else zji = 0;
-		rnd = genrand_real2();
-		if ((rnd < q && a_mat[k].count(j) == 0) || (rnd >= q && a_mat[k].count(j) == 1)) zkj = 1;
-		else zkj = 0;
-		rnd = genrand_real2();
-		if ((rnd < q && a_mat[i].count(k) == 0) || (rnd >= q && a_mat[i].count(k) == 1)) zik = 1;
-		else zik = 0;
+		if (a_mat_ns[i].count(j) > 0) {
+			zij = a_mat_ns[i][j];
+		}
+		else{
+			rnd = genrand_real2();
+			if ((rnd < q && a_mat[i].count(j) == 0) || (rnd >= q && a_mat[i].count(j) == 1)) zij = 1;
+			else zij = 0;
+		}
+		if (a_mat_ns[j].count(k) > 0) {
+			zjk = a_mat_ns[j][k];
+		}
+		else{
+			rnd = genrand_real2();
+			if ((rnd < q && a_mat[j].count(k) == 0) || (rnd >= q && a_mat[j].count(k) == 1)) zjk = 1;
+			else zjk = 0;
+		}
+		if (a_mat_ns[k].count(i) > 0){
+			zki = a_mat_ns[k][i];
+		}
+		else{
+			rnd = genrand_real2();
+			if ((rnd < q && a_mat[k].count(i) == 0) || (rnd >= q && a_mat[k].count(i) == 1)) zki = 1;
+			else zki = 0;
+		}
+		if (a_mat_ns[j].count(i) > 0){
+			zji = a_mat_ns[j][i];
+		}
+		else{
+			rnd = genrand_real2();
+			if ((rnd < q && a_mat[j].count(i) == 0) || (rnd >= q && a_mat[j].count(i) == 1)) zji = 1;
+			else zji = 0;
+		}
+		if (a_mat_ns[k].count(j) > 0){
+			zkj = a_mat_ns[k][j];
+		}
+		else{
+			rnd = genrand_real2();
+			if ((rnd < q && a_mat[k].count(j) == 0) || (rnd >= q && a_mat[k].count(j) == 1)) zkj = 1;
+			else zkj = 0;
+		}
+		if (a_mat_ns[i].count(k) > 0){
+			zik = a_mat_ns[i][k];
+		}
+		else{
+			rnd = genrand_real2();
+			if ((rnd < q && a_mat[i].count(k) == 0) || (rnd >= q && a_mat[i].count(k) == 1)) zik = 1;
+			else zik = 0;
+		}
 
 		partial_sum_emp1 = (zij-q) * (zjk-q) * (zki-q) + (zij-q) * (zjk-q) * (zik-q) + 
 					(zij-q) * (zkj-q) * (zki-q) + (zij-q) * (zkj-q) * (zik-q) + 
 					(zji-q) * (zjk-q) * (zki-q) + (zji-q) * (zjk-q) * (zik-q) + 
 					(zji-q) * (zkj-q) * (zki-q) + (zji-q) * (zkj-q) * (zik-q);
 
-		rnd = genrand_real2();
-		if (a_mat[i].count(j) > 0 && a_mat[i].count(k) > 0){
-			if (rnd >= q) wi=1;
-		} 
-		else if (rnd < q) wi=1;
-		else wi=0;
+		pair<int, int> key_pair_i = {j,k};
+		if (wedge_ns[i].count(key_pair_i) > 0){
+			wi = wedge_ns[i][key_pair_i];
+		}
+		else{
+			rnd = genrand_real2();
+			if (a_mat[i].count(j) > 0 && a_mat[i].count(k) > 0){
+				if (rnd >= q) wi=1;
+			} 
+			else if (rnd < q) wi=1;
+			else wi=0;
+		}
 
-		rnd = genrand_real2();
-		if (a_mat[j].count(i) > 0 && a_mat[j].count(k) > 0){
-			if (rnd >= q) wj=1;
-		} 
-		else if (rnd < q) wj=1;
-		else wj=0;
+		pair<int,int> key_pair_j = {i,k};
+		if (wedge_ns[j].count(key_pair_j) > 0){
+			wj = wedge_ns[j][key_pair_j];
+		}
+		else{
+			rnd = genrand_real2();
+			if (a_mat[j].count(i) > 0 && a_mat[j].count(k) > 0){
+				if (rnd >= q) wj=1;
+			} 
+			else if (rnd < q) wj=1;
+			else wj=0;
+		}
 
-		rnd = genrand_real2();
-		if (a_mat[k].count(i) > 0 && a_mat[k].count(j) > 0){
-			if (rnd >= q) wk=1;
-		} 
-		else if (rnd < q) wk=1;
-		else wk=0;
+		pair<int,int> key_pair_k = {i,j};
+		if (wedge_ns[k].count(key_pair_k) > 0){
+			wk = wedge_ns[k][key_pair_k];
+		}
+		else{
+			rnd = genrand_real2();
+			if (a_mat[k].count(i) > 0 && a_mat[k].count(j) > 0){
+				if (rnd >= q) wk=1;
+			} 
+			else if (rnd < q) wk=1;
+			else wk=0;
+		}
 		
 		partial_sum_emp2 = (wi-q) * (zjk-q) + (wi-q) * (zkj-q) +
 					(wj-q) * (zik-q) + (wj-q) * (zki-q) +
@@ -245,6 +301,8 @@ double &clip_cliq_4_num1, double &clip_cliq_4_num2, double &clip_cliq_4_num3){
 
 	free1D(deg_ns);
 	free1D(randperm);
+	delete[] a_mat_ns;
+	delete[] wedge_ns;
 }
 
 int main(int argc, char *argv[])
@@ -347,6 +405,7 @@ int main(int argc, char *argv[])
 	if(t==-1 && NodeNum != -1){
 		t = (int)floor(NodeNum/3.0);
 	}
+	t = NodeNum-2;
 	cout<<"t: "<<t<<endl;
 
 	ItrNum = 1;			//Number of iterations (set #itr-1 to fix the permutation of nodes)
@@ -386,6 +445,7 @@ int main(int argc, char *argv[])
 		NodeNum = all_node_num;
         if(t==-1){
             t = (int)floor(NodeNum/3.0);
+			t = NodeNum-2;
             cout<<"t: "<<t<<endl;
         } 
 		for(j=0;j<NodeNum;j++) node_order[0][j] = j;
