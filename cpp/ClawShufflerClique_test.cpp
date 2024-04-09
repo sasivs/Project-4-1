@@ -148,7 +148,7 @@ double &clip_cliq_4_num1, double &clip_cliq_4_num2, double &clip_cliq_4_num3){
 	deg_th = c * deg_avg;
 
 	cliq_4_num_emp1 = 0; cliq_4_num_clip1 = 0; cliq_4_num_emp2 = 0; cliq_4_num_clip2 = 0; cliq_4_num_emp3 = 0; cliq_4_num_clip3 = 0;
-	for(itr=0; itr<3*t; itr+=3){
+	for(itr=0; itr<(3*t-2); itr+=1){
 		i = randperm[itr];
 		j = randperm[itr+1];
 		k = randperm[itr+2];
@@ -392,7 +392,7 @@ int main(int argc, char *argv[])
 	}
 	// Randomly generate the order of nodes --> node_order
 	else{
-		i = EdgeFile.find_last_of("/");
+		i = EdgeFile.find_last_of("\\");
 		outdir = EdgeFile.substr(0, i+1);
 		outfile = outdir + "node-order_itr" + to_string(ItrNum) + ".csv";
 		if(checkFileExistence(outfile)){
@@ -432,7 +432,7 @@ int main(int argc, char *argv[])
 	malloc1D(&deg, NodeNum);
 
 	// Output the header
-	i = EdgeFile.find_last_of("/");
+	i = EdgeFile.find_last_of("\\");
 	outdir = EdgeFile.substr(0, i+1);
 	for(i=0;i<3;i++){
 		if(fix_perm) outfile = outdir + "res_n_" + to_string(NodeNum) + "_alg_" + Alg + "_eps_" + Eps_s + "_eps_1_" + Eps_1_s + "_eps_2_" + Eps_2_s + "_eps_l_" + Eps_l_s + "_delta_" + delta_s + "_c_" + c_s + "_t_" + t_s + "_itr" + to_string(ItrNum) + "-1.csv";
@@ -488,12 +488,12 @@ int main(int argc, char *argv[])
         // cout<<"4-Clique counts unbiased: "<<cliq_num_ns<<endl;
         // cout<<"4-Clique counts clipping: "<<cliq_num_clip<<endl;
 
-        clip_cliq_num_re1 = fabs(clip_cliq_num1 - (double)cliq_num) / max((double)cliq_num, 0.001 * NodeNum);
-        clip_cliq_num_re2 = fabs(clip_cliq_num2 - (double)cliq_num) / max((double)cliq_num, 0.001 * NodeNum);
-        clip_cliq_num_re3 = fabs(clip_cliq_num3 - (double)cliq_num) / max((double)cliq_num, 0.001 * NodeNum);
-        cliq_4_num_re1 = fabs(cliq_4_num1 - (double)cliq_num) / max((double)cliq_num, 0.001 * NodeNum);
-        cliq_4_num_re2 = fabs(cliq_4_num2 - (double)cliq_num) / max((double)cliq_num, 0.001 * NodeNum);
-        cliq_4_num_re3 = fabs(cliq_4_num3 - (double)cliq_num) / max((double)cliq_num, 0.001 * NodeNum);
+        clip_cliq_num_re1 = fabs(fabs(clip_cliq_num1) - fabs((double)cliq_num)) / max((double)cliq_num, 0.001 * NodeNum);
+        clip_cliq_num_re2 = fabs(fabs(clip_cliq_num2) - fabs((double)cliq_num)) / max((double)cliq_num, 0.001 * NodeNum);
+        clip_cliq_num_re3 = fabs(fabs(clip_cliq_num3) - fabs((double)cliq_num)) / max((double)cliq_num, 0.001 * NodeNum);
+        cliq_4_num_re1 = fabs(fabs(cliq_4_num1) - fabs((double)cliq_num)) / max((double)cliq_num, 0.001 * NodeNum);
+        cliq_4_num_re2 = fabs(fabs(cliq_4_num2) - fabs((double)cliq_num)) / max((double)cliq_num, 0.001 * NodeNum);
+        cliq_4_num_re3 = fabs(fabs(cliq_4_num3) - fabs((double)cliq_num)) / max((double)cliq_num, 0.001 * NodeNum);
         
         /**************************** Output the results ****************************/
         fp = FileOpen(outfile, "a");

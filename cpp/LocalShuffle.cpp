@@ -254,6 +254,16 @@ void CalcNLocShuffleTri(map<int, int> *a_mat, int* deg, string outfile, double &
 
 	tri_num_emp1 = tri_num_bs * q_inv_11 + ed2_num_bs * q_inv_21 + ed1_num_bs * q_inv_31 + non_num_bs * q_inv_41;
 
+	// cout<<"Emp1: "<<tri_num_emp1<<endl;
+	// cout<<"Triangle coeff: "<<q_inv_11<<endl;
+	// cout<<"Triangle term: "<<tri_num_bs * q_inv_11<<endl;
+	// cout<<"2-edges coeff: "<<q_inv_21<<endl;
+	// cout<<"2-edges term: "<<ed2_num_bs * q_inv_21<<endl;
+	// cout<<"1-edges coeff: "<<q_inv_31<<endl;
+	// cout<<"1-edges term: "<<ed1_num_bs * q_inv_31<<endl;
+	// cout<<"no-edges coeff: "<<q_inv_41<<endl;
+	// cout<<"no-edges term: "<<non_num_bs * q_inv_41<<endl;
+
     p1_emp2 = exp(Eps_2)/(exp(Eps_2)+1);
     Mu_emp2 = p1_emp2*p2;
 	murho_emp2 = Mu_emp2 / exp(Eps_2);
@@ -267,6 +277,15 @@ void CalcNLocShuffleTri(map<int, int> *a_mat, int* deg, string outfile, double &
 	q_inv_41 = pow(murho_emp2, 3) / alp_1_3;
 
 	tri_num_emp2 = tri_num * q_inv_11 + ed2_num * q_inv_21 + ed1_num * q_inv_31 + non_num * q_inv_41;
+	// cout<<"Emp2: "<<tri_num_emp2<<endl;
+	// cout<<"Triangle coeff: "<<q_inv_11<<endl;
+	// cout<<"Triangle term: "<<tri_num * q_inv_11<<endl;
+	// cout<<"2-edges coeff: "<<q_inv_21<<endl;
+	// cout<<"2-edges term: "<<ed2_num * q_inv_21<<endl;
+	// cout<<"1-edges coeff: "<<q_inv_31<<endl;
+	// cout<<"1-edges term: "<<ed1_num * q_inv_31<<endl;
+	// cout<<"no-edges coeff: "<<q_inv_41<<endl;
+	// cout<<"no-edges term: "<<non_num * q_inv_41<<endl;
 
 	delete[] a_mat_ns;
 	free(randperm);
@@ -417,7 +436,7 @@ int main(int argc, char *argv[])
 	}
 	// Randomly generate the order of nodes --> node_order
 	else{
-		i = EdgeFile.find_last_of("/");
+		i = EdgeFile.find_last_of("\\");
 		outdir = EdgeFile.substr(0, i+1);
 		outfile = outdir + "node-order_itr" + to_string(ItrNum) + ".csv";
 		if(checkFileExistence(outfile)){
@@ -455,7 +474,7 @@ int main(int argc, char *argv[])
 	malloc1D(&deg, NodeNum);
 
 	// Output the header
-	i = EdgeFile.find_last_of("/");
+	i = EdgeFile.find_last_of("\\");
 	outdir = EdgeFile.substr(0, i+1);
 	for(i=0;i<3;i++){
 		if(fix_perm) outfile = outdir + "res_n_" + to_string(NodeNum) + "_alg_" + Alg + "_eps_" + Eps_s + "_eps_1_" + Eps_1_s + "_eps_2_" + Eps_2_s + "_eps_l_" + Eps_l_s + "_delta_" + delta_s + "_p2_" + p2_s + "_p2flag_" + p2_flag_s + "_itr" + to_string(ItrNum) + "-1.csv";
